@@ -21,17 +21,19 @@ transformed data {
   real<lower = 0, upper = 1> phi;
   real<lower = 1, upper = 30> tau;
   real<lower = 0, upper = 1> gamma;
-  real<lower = 0.0001, upper = 5> ratio;
 }
 transformed parameters{
   // initialize action values 
   vector[nTimeStep] Qwait = rep_vector(wIni, nTimeStep);
-  real Qquit = wIni * ratio;
+  vector[nTimeStep] QwaitCount = rep_vector(0, nTimeStep);
+  real Qquit = wIni * gamma ^(iti / stepDuration);
+  real QquitCount = 0;
   
   // initialize recordings of action values 
   matrix[nTimeStep, N] Qwaits = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
+  matrix[nTimeStep, N] QwaitCounts = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
   vector[N] Qquits = rep_vector(0, N);
-  
+  vector[N] QquitCounts = rep_vector(0, N);
   
   // initialize trialReward and nextWaitRateHat
   real trialReward;
@@ -41,36 +43,34 @@ transformed parameters{
   for(i in 1 : nTimeStep){
     gammaList[i] = gamma ^ (nTimeStep - i);
   }
-
-  // fill the first trial of Qwaits and Quits
-  Qwaits[,1] = Qwait;
-  Qquits[1] = Qquit;
-
+  
   //loop over trial
-  for(tIdx in 1 : (N - 1)){
+  for(tIdx in 1 : N){
     // determine nTimePoint
     int nTimePoint = nTimePoints[tIdx]; 
     // update and track action values
     if(trialEarnings[tIdx] > 0){
       trialReward = tokenValue;
       Qwait[1 : nTimePoint] = (1 - phi) * Qwait[1 : nTimePoint] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):nTimeStep];
+      QwaitCount[1:nTimePoint] = QwaitCount[1:nTimePoint] + 1;
     }else{
       nextWaitRateHat =  1 / (1  + exp((Qquit - Qwait[1])* tau));
       trialReward = nextWaitRateHat * Qwait[1] * gamma ^(iti / stepDuration) + (1 - nextWaitRateHat) * Qquit * gamma ^(iti / stepDuration);
       Qquit =  (1 - phi) * Qquit + phi *  trialReward;
+      QquitCount = QquitCount + 1;
       if(nTimePoint > 1){
         Qwait[1 : (nTimePoint - 1)] = (1 - phi) * Qwait[1 : (nTimePoint - 1)] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):(nTimeStep - 1)];
+        QwaitCount[1:(nTimePoint-1)] = QwaitCount[1:(nTimePoint - 1)] + 1;
       }
     }
-    Qwaits[,tIdx ＋ 1] = Qwait;
-    Qquits[tIdx + 1] = Qquit;
+    Qwaits[,tIdx] = Qwait;
+    Qquits[tIdx] = Qquit;
   }// end of the loop
 }
 model {
   phi ~ uniform(0, 1);
   tau ~ uniform(1, 30);
   gamma ~ uniform(0, 1);
-  ratio ~ uniform(0.0001, 5);
   
   // calculate the likelihood 
   for(tIdx in 1 : N){

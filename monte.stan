@@ -35,14 +35,19 @@ transformed parameters{
   // initialize trialReward and nextWaitRateHat
   real trialReward;
   real nextWaitRateHat = 1.0;
-  // 
+
+  // define gamma List
   vector[nTimeStep] gammaList;
   for(i in 1 : nTimeStep){
     gammaList[i] = gamma ^ (nTimeStep - i);
   }
   
+  // fill the first trial of Qwaits and Quits
+  Qwaits[,1] = Qwait;
+  Qquits[1] = Qquit;
+
   //loop over trial
-  for(tIdx in 1 : N){
+  for(tIdx in 1 : (N -1)){
     // determine nTimePoint
     int nTimePoint = nTimePoints[tIdx]; 
     // update and track action values
@@ -57,8 +62,8 @@ transformed parameters{
         Qwait[1 : (nTimePoint - 1)] = (1 - phi) * Qwait[1 : (nTimePoint - 1)] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):(nTimeStep - 1)];
       }
     }
-    Qwaits[,tIdx] = Qwait;
-    Qquits[tIdx] = Qquit;
+    Qwaits[,tIdx ＋ 1] = Qwait;
+    Qquits[tIdx ＋ 1] = Qquit;
   }// end of the loop
 }
 model {
