@@ -5,7 +5,7 @@ expModelFitting = function(modelName, pars){
   Sys.setenv(USE_CXX14=1) # making rstan working on this device 
   rstan_options(auto_write = TRUE) # default settings borrowed somewhere
   options(mc.cores = parallel::detectCores())# enable multi-core precessors 
-  
+  library("loo")
   # source scripts
   source('subFxs/modelFittingFxs.R') # for fitting single case 
   source('subFxs/wtwSettings.R')
@@ -52,6 +52,6 @@ expModelFitting = function(modelName, pars){
     trialEarnings= trialEarningsList[[sIdx]]
     timeWaited = timeWaitedList[[sIdx]]
     fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, sIdx)
-    modelFitting(sIdx, cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
+    modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
   }
 }
