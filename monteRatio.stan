@@ -62,8 +62,8 @@ transformed parameters{
         Qwait[1 : (nTimePoint - 1)] = (1 - phi) * Qwait[1 : (nTimePoint - 1)] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):(nTimeStep - 1)];
       }
     }
-    Qwaits[,tIdx ＋ 1] = Qwait;
-    Qquits[tIdx + 1] = Qquit;
+    Qwaits[,tIdx+1] = Qwait;
+    Qquits[tIdx+1] = Qquit;
   }// end of the loop
 }
 model {
