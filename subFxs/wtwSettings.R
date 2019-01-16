@@ -1,5 +1,4 @@
-#source('plotTheme.R')
-
+# not so good to generate varibale in scripts, since sometimes it invloves variables you don't wont
 ######## condition varibles #########
 conditions = c("HP", "LP")
 conditionColors = c("#7b3294", "#008837")
@@ -86,7 +85,7 @@ optimRewardRates$HP = max(HP)
 optimRewardRates$LP = max(LP)
 
 # calculate wInis 
-wInis = list()
+wInis = vector()
 for(c in 1 : 2){
   cond = conditions[c];
   trialTick = trialTicks[[cond]]
@@ -101,9 +100,13 @@ for(c in 1 : 2){
     actionValueWaits[k] = sum(tokenValue * exp(- (trialTick[k : nTicks] - trialTick[k]) * r)* thisDelayPDF[k : nTicks] / sum( thisDelayPDF[k : nTicks]))    
   }
   junk = mean(actionValueWaits)    
-  wInis[[cond]] = junk
+  wInis[c] = junk
 }
 
+save("conditions", "conditionColors", "tMaxs", "blockMins", "blockSecs", "iti", "tGrid", 
+     "tokenValue", "stepDuration", "trialTicks", "pareto", "rewardDelayCDF", 
+     "rewardDelayPDF", "meanRewardDelay", "rewardRate", "optimRewardRates", 
+     "optimWaitTimes", "wInis", file = "wtwSettings.RData")
 # library(ggplot2)
 # source('plotThemes.R')
 # plotData = data.frame(time = c(trialTicks$HP, trialTicks$LP),
