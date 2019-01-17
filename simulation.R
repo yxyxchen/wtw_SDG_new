@@ -13,7 +13,7 @@ simulation = function(modelName){
   dir.create(outFile)
   
   # choose modelFun
-  modelFun = getModelFun(modelName)
+  modelFun = getSimModelFun(modelName)
   ################ simulation ################
   for(condIdx in 1 : 2){
     cond = conditions[condIdx];

@@ -1,5 +1,5 @@
 # this script analysized the simulation data on the group level
-modelName = "monteCfd"
+modelName = "monte"
 load(sprintf("genData/simulation/%s/realParas.RData", modelName)) # for nComb, paraNames, nPara
 ############ load data and functions #########
 # generally loading 
@@ -20,6 +20,43 @@ nRep = 5
 plotTrialwiseData = F
 plotKMSC = F
 plotWTW = F
+
+# tempt for 
+for(cIdx in 1 : 2){
+  cond = conditions[cIdx]
+  if(cIdx == 1){
+    trialData = trialHPData
+  }else{
+    trialData = trialLPData
+  }
+  # generate arguments for later analysis 
+  tMax = tMaxs[cIdx]
+  kmGrid = seq(0, tMax, by=0.1) 
+  
+  minVaWaits_ = matrix(0, nComb, nRep)
+  maxVaWaits_ = matrix(0, nComb, nRep)
+  
+  minVaQuits_ = matrix(0, nComb, nRep)
+  maxVaQuits_ = matrix(0, nComb, nRep)
+  
+  for(combIdx in 1 : nComb){
+    # loop over repetitions 
+    for(rIdx in 1 : nRep){
+      # select data
+      thisTrialData = trialData[[simIdx[combIdx, rIdx]]]
+      minVaWaits_[combIdx, rIdx] = min(thisTrialData$vaWaits)
+      maxVaWaits_[combIdx, rIdx] = max(thisTrialData$vaWaits)
+      minVaQuits_[combIdx, rIdx] = min(thisTrialData$vaQuits)
+      maxVaQuits_[combIdx, rIdx] = max(thisTrialData$vaQuits)
+    }
+  }
+}
+
+min(minVaWaits_)
+max(maxVaWaits_)
+
+min(minVaQuits_)
+max(maxVaQuits_)
 # loop over conditions 
 for(cIdx in 1 : 2){
   cond = conditions[cIdx]

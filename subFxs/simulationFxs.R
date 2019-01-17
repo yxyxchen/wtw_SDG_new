@@ -1,5 +1,5 @@
 # select modelFun by modelName
-getModelFun = function(modelName){
+getSimModelFun = function(modelName){
   if(modelName == "monte"){
     modelFun = monte
   }else if(modelName == "monteCfd"){
@@ -243,3 +243,5 @@ monteCfd = function(para, cond){
     "vaQuits" = vaQuits[1:tIdx])
   return(outputs)
 } #end of the function
+
+
