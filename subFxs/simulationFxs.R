@@ -79,7 +79,7 @@ monte = function(para, cond){
     # update totalSecs
     totalSecs = totalSecs + iti+ ifelse(getReward, rewardDelay, timeWaited[tIdx]) 
     
-    # update Qwait and Qquit if it is not the last trial
+    # update Qwait and Qquit and go to the next trail if totalSecs < blockSecs
     if(totalSecs < blockSecs){
       if(nextReward == 0){
         nextWaitRateHat =  1 / sum(1  + exp((Qquit - Qwait[1])* tau))
@@ -101,21 +101,25 @@ monte = function(para, cond){
       # track vaWaits and vaQuits 
       vaWaits[,tIdx + 1] = Qwait
       vaQuits[tIdx + 1] = Qquit
+      
+      # update tIdx
+      tIdx = tIdx + 1
     }# end of the update
-    
-    # update tIdx
-    tIdx = tIdx + 1
     
     if(Qquit < 0 || sum(Qwait < 0) > 0){
       browser()
     }
   } # end of all trials 
-  outputs = list(
-                 "trialEarnings" = trialEarnings,
-                 "timeWaited" = timeWaited,
-                 "rewardDelays" = rewardDelays,
-                 "vaWaits" = vaWaits,
-                 "vaQuits" = vaQuits)
+  
+  outputs = list( 
+    "trialNum" = 1 : tIdx,
+     "trialEarnings" = trialEarnings[1 : tIdx],
+     "timeWaited" = timeWaited[1 : tIdx],
+     "sellTime" = cumsum(timeWaited[1 : tIdx]), # used in wtw analysis
+     "scheduledWait" = rewardDelays[1 : tIdx],
+     "vaWaits" = vaWaits[, 1 : tIdx],
+     "vaQuits" = vaQuits[1 : tIdx]
+    )
   return(outputs)
 } #end of the function
 
@@ -195,7 +199,7 @@ monteCfd = function(para, cond){
     # update totalSecs
     totalSecs = totalSecs + iti+ ifelse(getReward, rewardDelay, timeWaited[tIdx]) 
     
-    # update Qwait and Qquit if it is not the last trial
+    # update Qwait and Qquit and go to the next trial if totalSecs < blockSecs
     if(totalSecs < blockSecs){
       if(nextReward == 0){
         junk1 = Qwait[1] + c * sqrt(log(actionCount) / (QwaitCount[1] + 1))
@@ -220,20 +224,22 @@ monteCfd = function(para, cond){
       # track vaWaits and vaQuits 
       vaWaits[,tIdx + 1] = Qwait
       vaQuits[tIdx + 1] = Qquit
+      
+      # update tIdx
+      tIdx = tIdx + 1
     }# end of the update
-    
-    # update tIdx
-    tIdx = tIdx + 1
     
     if(Qquit < 0 || sum(Qwait < 0) > 0){
       browser()
     }
   } # end of all trials 
   outputs = list(
-    "trialEarnings" = trialEarnings,
-    "timeWaited" = timeWaited,
-    "rewardDelays" = rewardDelays,
-    "vaWaits" = vaWaits,
-    "vaQuits" = vaQuits)
+    "trialNum" = 1 : tIdx,
+    "trialEarnings" = trialEarnings[1:tIdx],
+    "timeWaited" = timeWaited[1:tIdx],
+    "sellTime" = cumsum(timeWaited[1 : tIdx]), # used in wtw analysis
+    "scheduledWait" = rewardDelays[1:tIdx],
+    "vaWaits" = vaWaits[,1:tIdx],
+    "vaQuits" = vaQuits[1:tIdx])
   return(outputs)
 } #end of the function
