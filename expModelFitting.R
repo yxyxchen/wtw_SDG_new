@@ -13,7 +13,7 @@ expModelFitting = function(modelName, pars){
   
   # compile the stan model 
   dir.create(sprintf("genData/expModelFitting/%s", modelName))
-  model = stan_model(file = sprintf("%s.stan", modelName))
+  model = stan_model(file = sprintf("stanModels/%s.stan", modelName))
   
   # load expData
   allData = loadAllData()

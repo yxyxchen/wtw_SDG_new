@@ -56,9 +56,9 @@ transformed parameters{
       trialReward = tokenValue;
       for(t in 1 : nTimePoint){
 	if(trialReward * gammaList[nTimeStep - nTimePoint + t] > Qwait[t]){
-		Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t]
+		Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t];
 	}else{
-		Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t]
+		Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t];
 	}
       }
     }else{
@@ -71,11 +71,11 @@ transformed parameters{
       }
       // update Qwait if nTimePoint > 1
       if(nTimePoint > 1){
-        for(i in 1 : (nTimePoint - 1)){
+        for(t in 1 : (nTimePoint - 1)){
           if(trialReward * gammaList[nTimeStep - nTimePoint + t] > Qwait[t]){
-            Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t]
+            Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t];
 	   }else{
-            Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t]
+            Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t];
 	   }
         }
       }
