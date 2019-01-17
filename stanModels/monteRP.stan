@@ -85,7 +85,8 @@ transformed parameters{
   }// end of the loop
 }
 model {
-  phi ~ uniform(0, 1);
+  phiR ~ uniform(0, 1);
+  phiP ~ uniform(0, 1);
   tau ~ uniform(1, 30);
   gamma ~ uniform(0, 1);
   
