@@ -3,7 +3,11 @@ library("R.matlab")
 n = 120
 nModel = 2
 <<<<<<< HEAD
+<<<<<<< HEAD
 modelNames = c("monte", "monteBias")
+=======
+modelNames = c("monte", "monteRP")
+>>>>>>> 76dded834aafefccba54ad4be637489b7f59cbba
 =======
 modelNames = c("monte", "monteRP")
 >>>>>>> 76dded834aafefccba54ad4be637489b7f59cbba

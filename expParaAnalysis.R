@@ -1,7 +1,11 @@
 n = 120
 modelName = "monteRP"
 samplePara = vector("list", length = n)
+<<<<<<< HEAD
 summaryPara = data.frame("phi" = vector(length = n), "phiP" = vector(length = n),
+=======
+summaryPara = data.frame("phiR" = vector(length = n), "phiP" = vector(length = n),
+>>>>>>> 76dded834aafefccba54ad4be637489b7f59cbba
                          "tau" = vector(length = n), "gamma" = vector(length = n),
                          "LL_all" = vector(length = n))
 for(sIdx in 1 : n){
@@ -23,6 +27,7 @@ ggplot(plotData, aes(optimism, AUC)) + geom_point() + facet_grid(~condition)
 
 cor.test(plotData$optimism, plotData$AUC)
 
+<<<<<<< HEAD
 
 ##################
 
@@ -48,3 +53,5 @@ plotData = cbind(summaryPara, blockData[blockData$blockNum == 1, ])
 ggplot(plotData, aes(bias, AUC)) + geom_point() + facet_grid(~condition)
 
 cor.test(plotData$optimism, plotData$AUC)
+=======
+>>>>>>> 76dded834aafefccba54ad4be637489b7f59cbba
