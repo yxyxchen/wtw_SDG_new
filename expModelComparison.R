@@ -2,7 +2,7 @@
 library("R.matlab")
 n = 120
 nModel = 2
-modelNames = c("monte", "monteRatio")
+modelNames = c("monte", "monteBias")
 
 waicList = matrix(NA, n, nModel)
 
