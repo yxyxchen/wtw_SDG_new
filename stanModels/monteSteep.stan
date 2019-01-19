@@ -21,12 +21,12 @@ transformed data {
   real<lower = 0, upper = 1> phi;
   real<lower = 1, upper = 30> tau;
   real<lower = 0, upper = 1> gamma;
-  real<lower = 0, upper = 2> exponent;
+  real<lower = 0, upper = 2> steep;
 }
 transformed parameters{
   // initialize action values 
-  vector[nTimeStep] Qwait = rep_vector(wIni, nTimeStep);
-  real Qquit = wIni * gamma ^(iti / stepDuration);
+  vector[nTimeStep] Qwait;
+  real Qquit;
   
   // initialize recordings of action values 
   matrix[nTimeStep, N] Qwaits = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
@@ -44,6 +44,11 @@ transformed parameters{
   }
   
   // fill the first trial of Qwaits and Quits
+  for(i in 1 : nTimeStep){
+    Qwait[i] = wIni * pow(e(), -steep * (i - 1));
+  
+  }
+  Qquit = wIni * gamma ^(iti / stepDuration);
   Qwaits[,1] = Qwait;
   Qquits[1] = Qquit;
 
@@ -71,6 +76,8 @@ model {
   phi ~ uniform(0, 1);
   tau ~ uniform(1, 30);
   gamma ~ uniform(0, 1);
+  steep ~ uniform(0, 2);
+
   
   // calculate the likelihood 
   for(tIdx in 1 : N){
