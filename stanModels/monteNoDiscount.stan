@@ -16,12 +16,11 @@ transformed data {
   real stepDuration = 0.5;
   real iti = 2;
   real tokenValue = 10;
+  real gamma = 1;
   }
   parameters {
-  real<lower = 0, upper = 1> phiR;
-  real<lower = 0, upper = 1> phiP;
+  real<lower = 0, upper = 1> phi;
   real<lower = 1, upper = 30> tau;
-  real<lower = 0, upper = 1> gamma;
 }
 transformed parameters{
   // initialize action values 
@@ -40,7 +39,7 @@ transformed parameters{
   // define gamma List
   vector[nTimeStep] gammaList;
   for(i in 1 : nTimeStep){
-    gammaList[i] = gamma ^ (nTimeStep - i);//larger and larger
+    gammaList[i] = gamma ^ (nTimeStep - i);
   }
   
   // fill the first trial of Qwaits and Quits
@@ -54,30 +53,13 @@ transformed parameters{
     // update and track action values
     if(trialEarnings[tIdx] > 0){
       trialReward = tokenValue;
-      for(t in 1 : nTimePoint){
-	if(trialReward * gammaList[nTimeStep - nTimePoint + t] > Qwait[t]){
-		Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t];
-	}else{
-		Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t];
-	}
-      }
+      Qwait[1 : nTimePoint] = (1 - phi) * Qwait[1 : nTimePoint] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):nTimeStep];
     }else{
       nextWaitRateHat =  1 / (1  + exp((Qquit - Qwait[1])* tau));
       trialReward = nextWaitRateHat * Qwait[1] * gamma ^(iti / stepDuration) + (1 - nextWaitRateHat) * Qquit * gamma ^(iti / stepDuration);
-      if(trialReward > Qquit){
-      	Qquit =  (1 - phiR) * Qquit + phiR *  trialReward;
-      }else{
-      	Qquit =  (1 - phiP) * Qquit + phiP *  trialReward;
-      }
-      // update Qwait if nTimePoint > 1
+      Qquit =  (1 - phi) * Qquit + phi *  trialReward;
       if(nTimePoint > 1){
-        for(t in 1 : (nTimePoint - 1)){
-          if(trialReward * gammaList[nTimeStep - nTimePoint + t] > Qwait[t]){
-            Qwait[t] = (1 - phiR) * Qwait[t] + phiR * trialReward * gammaList[nTimeStep - nTimePoint + t];
-	   }else{
-            Qwait[t] = (1 - phiP) * Qwait[t] + phiP * trialReward * gammaList[nTimeStep - nTimePoint + t];
-	   }
-        }
+        Qwait[1 : (nTimePoint - 1)] = (1 - phi) * Qwait[1 : (nTimePoint - 1)] + phi * trialReward * gammaList[(nTimeStep - nTimePoint + 1):(nTimeStep - 1)];
       }
     }
     Qwaits[,tIdx+1] = Qwait;
@@ -85,11 +67,9 @@ transformed parameters{
   }// end of the loop
 }
 model {
-  phiR ~ uniform(0, 1);
-  phiP ~ uniform(0, 1);
+  phi ~ uniform(0, 1);
   tau ~ uniform(1, 30);
-  gamma ~ uniform(0, 1);
-  
+
   // calculate the likelihood 
   for(tIdx in 1 : N){
     int action;
@@ -122,13 +102,11 @@ generated quantities {
       }
       values[1] = Qwaits[i, tIdx] * tau;
       values[2] = Qquits[tIdx] * tau;
-      log_lik[i, tIdx] = categorical_logit_lpmf(action | values);
+      log_lik[i, tIdx] =categorical_logit_lpmf(action | values);
     }
   }// end of the loop
   LL_all =sum(log_lik);
 }
-
-
 
 
 

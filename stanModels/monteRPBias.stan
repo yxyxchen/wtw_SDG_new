@@ -22,6 +22,7 @@ transformed data {
   real<lower = 0, upper = 1> phiP;
   real<lower = 1, upper = 30> tau;
   real<lower = 0, upper = 1> gamma;
+  real<lower = -20, upper = 20> quitBias;
 }
 transformed parameters{
   // initialize action values 
@@ -62,7 +63,7 @@ transformed parameters{
 	}
       }
     }else{
-      nextWaitRateHat =  1 / (1  + exp((Qquit - Qwait[1])* tau));
+      nextWaitRateHat =  1 / (1  + exp((Qquit - Qwait[1] + quitBias )* tau));
       trialReward = nextWaitRateHat * Qwait[1] * gamma ^(iti / stepDuration) + (1 - nextWaitRateHat) * Qquit * gamma ^(iti / stepDuration);
       if(trialReward > Qquit){
       	Qquit =  (1 - phiR) * Qquit + phiR *  trialReward;
@@ -89,6 +90,7 @@ model {
   phiP ~ uniform(0, 1);
   tau ~ uniform(1, 30);
   gamma ~ uniform(0, 1);
+  quitBias ~ uniform(-20, 20);
   
   // calculate the likelihood 
   for(tIdx in 1 : N){
@@ -101,7 +103,7 @@ model {
       action = 1; // wait
     }
       values[1] = Qwaits[i, tIdx] * tau;
-      values[2] = Qquits[tIdx] * tau;
+      values[2] = (Qquits[tIdx] + quitBias) * tau ;
       action ~ categorical_logit(values);
     } 
   }
@@ -121,14 +123,12 @@ generated quantities {
         action = 1; // wait
       }
       values[1] = Qwaits[i, tIdx] * tau;
-      values[2] = Qquits[tIdx] * tau;
-      log_lik[i, tIdx] = categorical_logit_lpmf(action | values);
+      values[2] = (Qquits[tIdx] + quitBias) * tau;
+      log_lik[i, tIdx] =categorical_logit_lpmf(action | values);
     }
   }// end of the loop
   LL_all =sum(log_lik);
 }
-
-
 
 
 

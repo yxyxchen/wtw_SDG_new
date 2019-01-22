@@ -24,7 +24,7 @@ expModelFitting = function(modelName, pars){
   n = length(allIDs)                    # n
   
   trialData = trialData[(1 : length(trialData)) %in% allIDs]
-  timeWaitedList = sapply(1 :n, function(sIdx) {
+  timeWaitedList = sapply(1 : n, function(sIdx) {
     tempt = trialData[[sIdx]]
     junk = tempt$timeWaited[1 : sum(tempt$blockNum == 1)]
   })

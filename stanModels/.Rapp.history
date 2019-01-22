@@ -1,0 +1,2 @@
+load("/Users/cyx/Documents/first_kick/wtw_SDG_new/stanModels/monteRP.rds")
+load("/Users/cyx/Documents/first_kick/wtw_SDG_new/stanModels/monteSteep.rds")

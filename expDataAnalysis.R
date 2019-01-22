@@ -20,21 +20,24 @@ nBlock = 3
 cat('Analyzing data for n','=',n,'subjects.\n')
 
 # control which individual-level plots to generate
-plotTrialwiseData = F
+plotTrialwiseData = T
 plotKMSC = F
 plotWTW = F
 plotTimeEarnings = F   # no good effect 
 plotTrialEarnings =  F  # no good effect 
 
+# look into long-AUC subjects in LP condition
+sIdxList = match(blockData$id[blockData$AUC > 20 & blockData$blockNum == 1], hdrData$ID)
+
 # initialize outputs, organised by block
 tGrid = seq(0, blockSecs, by = 0.1)
 AUC = numeric(length =n * nBlock)
 totalEarnings =  numeric(length =n * nBlock)
-
+wtwEarly = numeric(length =n * nBlock)
 # descriptive statistics for individual subjects and blocks
-for (sIdx in 1:n) {
+for (sIdx in sIdxList) {
   thisID = allIDs[sIdx]
-  for (bkIdx in 1:nBlock){
+  for (bkIdx in 1:1){
     # select data 
     thisTrialData = trialData[[thisID]]
     thisBlockIdx = (thisTrialData$blockNum == bkIdx)
@@ -62,7 +65,7 @@ for (sIdx in 1:n) {
     # WTW time series
     wtwCeiling = tMax
     wtwtsResults = wtwTS(thisTrialData, tGrid, wtwCeiling, label, plotWTW)
-
+    wtwEarly[noIdx] = mean(wtwtsResults[1 : (1 * 60 * 10)])
     # accumutative timeEarnings 
     timeEarnings = getTimeEarnings(thisTrialData, tGrid, label, plotTimeEarnings)
     
@@ -86,7 +89,7 @@ for (sIdx in 1:n) {
 # organize and save blockWiseData
 blockData = data.frame(id = rep(allIDs, each = nBlock), blockNum = rep( t(1 : nBlock), n),
                        cbal = rep(hdrData$cbal, each = nBlock), condition = factor(rep(hdrData$condition, each = nBlock), levels = c("HP", "LP")),
-                       stress = factor(rep(hdrData$stress, each = nBlock), levels = c("no stress", "stress")), AUC = AUC, 
+                       stress = factor(rep(hdrData$stress, each = nBlock), levels = c("no stress", "stress")), AUC = AUC, wtwEarly = wtwEarly,
                        totalEarnings = totalEarnings)
 save(blockData, file = 'genData/expDataAnalysis/blockData.RData')
 
