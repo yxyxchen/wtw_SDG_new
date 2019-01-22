@@ -1,6 +1,7 @@
 # this script analysized the simulation data on the group level
-modelName = "monte"
-load(sprintf("genData/simulation/%s/realParas.RData", modelName)) # for nComb, paraNames, nPara
+modelName = "monteSteep"
+load(sprintf("genData/simulation/%s/realParas.RData", modelName)) # for nComb, paraNames, nPara, nBlock
+nBlock = 3 
 ############ load data and functions #########
 # generally loading 
 library("ggplot2")
@@ -34,42 +35,54 @@ for(cIdx in 1 : 2){
   kmGrid = seq(0, tMax, by=0.1) 
   
   # initialize outputs
-  totalEarnings_ = matrix(0, nComb, nRep)
-  AUC_ = matrix(0, nComb, nRep)
+  totalEarnings_ = array(0, c(nComb, nBlock, nRep))
+  AUC_ = array(0, c(nComb, nBlock, nRep))
   
   # loop over combIdx
   for(combIdx in 1 : nComb){
-    # loop over repetitions 
-    for(rIdx in 1 : nRep){
-      # select data
-      thisTrialData = trialData[[simIdx[combIdx, rIdx]]]
-      realPara = realParas[combIdx,]
-      
-      # generate arguments for later analysis 
-      label = sprintf('%s %s', conditions[cIdx], paste0(paraNames, realPara, collapse = " "))
-      
-      # summarise totalEarnings 
-      totalEarnings_[combIdx, rIdx] =  sum(thisTrialData$trialEarnings)
-      
-      # plot trial-by-trial data
-      if (plotTrialwiseData) {
-        trialPlots(thisTrialData,label)
-      }
-      
-      # survival analysis
-      kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
-      AUC_[combIdx, rIdx] = kmscResults[['auc']]
-      
-      # WTW time series
-      wtwCeiling = tMax
-      wtwtsResults = wtwTS(thisTrialData, tGrid, wtwCeiling, label, plotWTW)
-    }# end of repetitions
+    realPara = realParas[combIdx,]
+    # loop over blocks
+    for(bkIdx in 1 : nBlock){
+      # loop over repitations
+      for(rIdx in 1 : nRep){
+        # select data
+        thisTrialData = trialData[[simIdx[combIdx, rIdx]]]
+        select = which(thisTrialData$sellTime <= bkIdx * blockSecs &
+                         thisTrialData$sellTime > (bkIdx - 1) * blockSecs)
+        thisTrialData$trialNum = thisTrialData$trialNum[select]
+        thisTrialData$trialEarnings = thisTrialData$trialEarnings[select]
+        thisTrialData$timeWaited = thisTrialData$timeWaited[select]
+        thisTrialData$sellTime = thisTrialData$sellTime[select]
+        thisTrialData$scheduledWait = thisTrialData$scheduledWait[select] 
+        
+        # generate arguments for later analysis 
+        label = sprintf('%s %s', conditions[cIdx], paste0(paraNames, realPara, collapse = " "))
+        
+        # summarise totalEarnings 
+        totalEarnings_[combIdx, bkIdx, rIdx] =  sum(thisTrialData$trialEarnings)
+        
+        # plot trial-by-trial data
+        if (plotTrialwiseData) {
+          trialPlots(thisTrialData,label)
+        }
+        
+        # survival analysis
+        kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
+        AUC_[combIdx, bkIdx, rIdx] = kmscResults[['auc']]
+        
+        # WTW time series
+        wtwCeiling = tMax
+        wtwtsResults = wtwTS(thisTrialData, tGrid, wtwCeiling, label, plotWTW)
+      }# end of repetitions
+    }# end of blocks
   }# end of para combinations 
   # organize and save blockData
+  dim(AUC_) = c(nComb * nBlock, nRep) 
+  dim(totalEarnings_) = c(nComb * nBlock, nRep) 
   AUC = rowSums(AUC_) / nRep
   totalEarnings = rowSums(totalEarnings_) / nRep
-  blockData = data.frame(id = 1 : combIdx, blockNum = rep(1, nComb),
-                         condition = factor(rep(cond, each = nComb), levels = c("HP", "LP")),
+  blockData = data.frame(combIdx = rep(1 : combIdx, nBlock), blockNum = rep(1 : nBlock, each = nComb),
+                         condition = factor(rep(cond, each = nComb * nBlock), levels = c("HP", "LP")),
                          AUC = AUC, 
                          totalEarnings = totalEarnings)
   if(cIdx == 1){
@@ -80,128 +93,65 @@ for(cIdx in 1 : 2){
 }
 
 ####### plot distribution of totalEarnings
-blockData = data.frame(rbind(blockHPData, blockLPData), rbind(realParas))
+realParaRanks = apply(realParas, MARGIN = 2, function(x) match(x, sort(unique(x))))
+blockData = data.frame(rbind(blockHPData, blockLPData), rbind(realParaRanks, realParaRanks))
 colnames(blockData)[(ncol(blockData) - nPara + 1) : ncol(blockData) ] = paraNames
-ggplot(blockData, aes(totalEarnings)) + geom_histogram(bins = 15) +
-  facet_wrap(~condition, nrow = 1) + xlab('Total earnings') + ylab("Num of simulations") + saveTheme + xlim(c(0, 600))
-fileName = sprintf("figures/simDataAnalysis/%s/totalEarnings.pdf", modelName)
-ggsave(fileName, width = 16, height = 8)
 
-# calculate range
-dplyr::summarise(group_by(blockData, condition),
-          minEarning = min(totalEarnings),
-          maxEarning = max(totalEarnings))
 
 ############ summarise para effects on total earnings ###########
-paraValues = 1:5
-paraData = data.frame(condition = rep(c("HP", "LP"), each = nValue, nPara),
-                         paraNames = rep(paraNames, each = nValue * 2),
-                         paraValues = rep(paraValues, nPara * 2))
-paraData$paraNames = factor(paraData$paraNames, levels = paraNames)
+paraValues = 1:nValue
+paraData = data.frame(paraName = rep(paraNames,each = nValue * 2 * nBlock),
+                      paraRank = rep(rep(1 : nValue, each =  2 * nBlock), nPara),
+                      condition = rep(rep(c("HP", "LP"), each = nBlock), nValue),
+                      blockNum = rep(1 : nBlock, nValue * 2 * nPara)
+                      ) # 2 is nCondition
+paraData$paraName = factor(paraData$paraName, levels = paraNames)
 
-
-# summarise mu 
-muByPhi = summarise_at(group_by(blockData, condition, phi), vars(AUC:totalEarnings), mean)
-muByTau = summarise_at(group_by(blockData, condition, c), vars(AUC:totalEarnings), mean)
-muByGamma = summarise_at(group_by(blockData, condition, gamma), vars(AUC:totalEarnings), mean)
-
-# summarise sd
-stdByPhi = summarise_at(group_by(blockData, condition, phi), vars(AUC:totalEarnings), sd)
-stdByTau = summarise_at(group_by(blockData, condition, tau), vars(AUC:totalEarnings), sd)
-stdByGamma = summarise_at(group_by(blockData, condition, gamma), vars(AUC:totalEarnings), sd)
-
+# mu
+tempt = vector("list", length = nPara)
+for(i in 1 : nPara){
+  tempt[[i]] = blockData %>%
+    group_by_at(vars(paraNames[i], condition, blockNum)) %>%
+    summarize_at(vars(AUC:totalEarnings), mean)
+}
+junk = ldply (tempt, data.frame)
+paraData = data.frame(paraData, muAUC = junk$AUC, muEarn = junk$totalEarnings)
+# std
+tempt = vector("list", length = nPara)
+for(i in 1 : nPara){
+  tempt[[i]] = blockData %>%
+    group_by_at(vars(condition, blockNum, paraNames[i],)) %>%
+    summarize_at(vars(AUC:totalEarnings), sd)
+}
+junk = ldply (tempt, data.frame)
+paraData = data.frame(paraData, stdAUC = junk$AUC, stdEarn = junk$totalEarnings)
 # 
-mu = rbind(muByPhi, muByTau, muByGamma);
-mu = mu[, 3:4]
-std = rbind(stdByPhi, stdByTau, stdByGamma)
-std = std[,3:4]
-max= mu + std
-min = mu -std
-
-summaryEarnData = cbind(paraData, mu[,2], std[,2], max[,2], min[,2]);
-summaryAUCData = cbind(paraData, mu[,1], std[,1], max[,1], min[,1]);
-colnames(summaryEarnData) = c(colnames(paraData), 'mu', 'std', 'max', 'min')
-colnames(summaryAUCData) = c(colnames(paraData), 'mu', 'std', 'max', 'min')
-
-# plot 
+paraData$maxAUC = paraData$muAUC + paraData$stdAUC
+paraData$minAUC = paraData$muAUC - paraData$stdAUC
+paraData$maxEarn = paraData$muEarn + paraData$stdEarn
+paraData$minEarn= paraData$muEarn - paraData$stdEarn
+paraData$paraRank = as.factor(paraData$paraRank)
+# plot earn
+dir.create("figures")
+dir.create("figures/simDataAnalysis")
+dir.create(sprintf("figures/simDataAnalysis/%s", modelName))
 for(c in 1:2){
   cond = conditions[c]
-  ggplot(summaryAUCData[summaryAUCData$condition == cond,], aes(factor(paraValues), mu)) +
-    geom_bar(stat = "identity", width=0.5, fill = conditionColors[c]) + geom_errorbar(aes(ymin = min, ymax = max), width=.2)+
-    facet_wrap(~paraNames, nrow = 1)+ saveTheme +
+  ggplot(paraData[paraData$condition == cond,], aes(paraRank, muAUC)) +
+    geom_bar(stat = "identity", width=0.5, fill = conditionColors[c]) + geom_errorbar(aes(ymin = minAUC, ymax = maxAUC), width=.2)+
+    facet_wrap(paraName ~ blockNum, nrow = 2)+ saveTheme +
     xlab("Parameter value") + ylab("AUC / s") + ggtitle(cond) 
   fileName = sprintf("figures/simDataAnalysis/%s/paraAUCEffect%s.pdf", modelName, cond)
-  ggsave(fileName, width = 16, height = 8) 
+  ggsave(fileName, width = 6, height = 6) 
 }
 
-# plot 
-for(c in 1:2){
-  cond = conditions[c]
-  ggplot(summaryEarnData[summaryEarnData$condition == cond,], aes(factor(paraValues), mu)) +
-    geom_bar(stat = "identity", width=0.5, fill = conditionColors[c]) + geom_errorbar(aes(ymin = min, ymax = max), width=.2)+
-    facet_wrap(~paraNames, nrow = 1)+ saveTheme +
-    xlab("Parameter value") + ylab("Total Earnings") + ggtitle(cond) 
-  fileName = sprintf("figures/simDataAnalysis/%s/paraEarnEffect%s.pdf",modelName, cond)
-  ggsave(fileName, width = 16, height = 8) 
-}
+# how to define different 
+realParaRanks = apply(realParas, MARGIN = 2, function(x) match(x, sort(unique(x))))
+blockData = data.frame(rbind(blockHPData, blockLPData), rbind(realParas, realParas))
+colnames(blockData)[(ncol(blockData) - nPara + 1) : ncol(blockData) ] = paraNames
+blockData$steep = as.factor(blockData$steep)
+blockData$phi = as.factor(blockData$phi)
 
-######### plot AUC against totalEarnings #######
-# prepare data
-plotData = blockData %>% arrange(totalEarnings) %>%group_by(condition) %>%
-  mutate(earningRank = rank(totalEarnings, ties.method = "first"))
-
-# plot for LP
-ggplot(plotData[plotData$condition == 'LP',], aes(AUC, totalEarnings)) + geom_point(size = 1.5) +
-  saveTheme + ylab('Total earnings') + xlim(c(0, tMaxs[2])) + ylim(c(0, 500))
-fileName = sprintf("figures/simDataAnalysis/%s/AUCLP_earningsLP.pdf", modelName)
-ggsave(fileName, width = 6, height = 4)
-
-# plot for HP
-ggplot(plotData[plotData$condition == 'HP',], aes(AUC, totalEarnings)) + geom_point(size = 1.5) +
-  saveTheme + ylab('Total earnings') + xlim(c(0, tMaxs[1])) + ylim(c(0, 500))
-fileName = sprintf("figures/simDataAnalysis/%s/AUCLP_earningsHP.pdf", modelName)
-ggsave(fileName, width = 6, height = 4)
-
-
-######## plot the timeseries of wtw #######
-# meanValues = c(apply(rawWTW$HP, MARGIN = 3, FUN = mean), 
-#                apply(rawWTW$LP, MARGIN = 3, FUN = mean))
-# stdValues = c(apply(rawWTW$HP, MARGIN = 3, FUN = sd), 
-#                apply(rawWTW$LP, MARGIN = 3, FUN = sd))
-# plotData = data.frame(meanValues, stdValues,
-#                       time = rep(tGrid, time = 2),
-#                       condition = rep(c('HP', 'LP'), each = length(tGrid)),
-#                       minValues = meanValues - stdValues / sqrt(dim(rawWTW$HP)[1]),
-#                       maxValues = meanValues + stdValues / sqrt(dim(rawWTW$HP)[1]))
-# 
-# ggplot(plotData, aes(time, meanValues, color = condition)) + 
-#   geom_ribbon(data = plotData[plotData$condition == 'HP',], aes(ymin=minValues, ymax=maxValues),linetype=0, alpha = 0.1, color = "#bababa") +
-#   geom_ribbon(data = plotData[plotData$condition == 'LP',], aes(ymin=minValues, ymax=maxValues),linetype=0, alpha = 0.1, color = "#bababa") + 
-#   geom_line(size = 1) + xlab('Time in block / s') + ylab('WTW / s') + saveTheme 
-# fileName = file.path(outFile, "wtwTimeSeries.pdf")
-# ggsave(fileName, width = 12, height = 8)
-
-########### plot HPAUC against LPAUC ##############
-plotData = data.frame(HPAUC = blockHPData$AUC, LPAUC = blockLPData$AUC)
-ggplot(plotData, aes(HPAUC, LPAUC)) + geom_point(shape = 3 ) + geom_smooth(method = lm) +
-  xlab('HP AUC/s') + ylab("LP AUC /s") + saveTheme
-fileName = fileName = sprintf("figures/simDataAnalysis/%s/HPAUC_LPAUC.pdf", modelName)
-ggsave(fileName, width = 8, height = 8)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ggplot(blockData, aes(steep, AUC)) + geom_bar(stat = "identity", width=0.5, fill = conditionColors[c])+
+  facet_wrap(phi ~ blockNum, nrow = 3)
 

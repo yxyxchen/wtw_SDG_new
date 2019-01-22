@@ -18,9 +18,9 @@ ggplot(summaryPara, aes(phiR, phiP)) + geom_point() + xlim(c(0,0.2)) +
 hist(summaryPara$optimism)
 
 ### relation ship between AUC and 
-plotData = cbind(summaryPara, blockData[blockData$blockNum == 2, ])
+load("genData/expDataAnalysis/blockData.RData")
+plotData = cbind(summaryPara, blockData[blockData$blockNum == 1, ])
 ggplot(plotData, aes(optimism, AUC)) + geom_point() + facet_grid(~condition)
-
 cor.test(plotData$optimism, plotData$AUC)
 
 

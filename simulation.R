@@ -1,10 +1,11 @@
-simulation = function(modelName){
+simulation = function(modelName, nBlock){
   # library 
   library('ggplot2')
   library('dplyr')
   library('tidyr')
   source('subFxs/simulationFxs.R') # 
   load("wtwSettings.RData")
+  source("subFxs/taskFxs.R")
   fileName = sprintf('genData/simulation/%s/realParas.RData', modelName)
   load(fileName)
   
@@ -28,7 +29,7 @@ simulation = function(modelName){
       para = realParas[h,];
       # calculate wIni
       for(j in 1 : nRep ){
-        tempt = modelFun(para, cond)
+        tempt = modelFun(para, cond, nBlock)
         trialData[[simIdx[h, j]]] = tempt
       }  
     }
