@@ -2,8 +2,8 @@
 modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, model){
   tMax = ifelse(cond == "HP", tMaxs[1], tMaxs[2])
   condIdx = ifelse(cond =="HP", 1, 2)
-  nChain = 3
-  nIter = 3000
+  nChain = 4
+  nIter = 5000
   nTimeStep = tMax / stepDuration
   nTimePoints = round(ifelse(trialEarnings >0, ceiling(timeWaited / stepDuration), floor(timeWaited / stepDuration) + 1))
   data_list <- list(tMax = tMax,
@@ -15,9 +15,8 @@ modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, mo
                     nTimePoints = nTimePoints)
   # init = list(list('phi' = 0.5, 'tau' = 15, 'gamma' = 0.5),
   #             list('phi' = 0.1, 'tau' = 5, 'gamma' = 0.1))
-  fit = sampling(object = model, data = data_list, cores = nChain, chains = nChain,
-               iter = nIter, 
-               show_messages = F) 
+  fit = sampling(object = model, data = data_list, cores = min(nChain, 3), chains = nChain,
+               iter = nIter) 
   # extract parameters
   extractedPara = fit %>%
     rstan::extract(permuted = F, pars = c(pars, "LL_all"))
@@ -27,32 +26,18 @@ modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, mo
     select(-chains) 
   write.csv(tempt, file = sprintf("%s.txt", fileName), row.names=FALSE)
   # calculate and save WAIC
-  log_lik = extract_log_lik(fit)
+  log_lik = extract_log_lik(fit) # quit time consuming 
   WAIC = waic(log_lik)
-  save("WAIC", file = sprintf("%s.RData", fileName))
+  save("WAIC", file = sprintf("%s_waic.RData", fileName))
   # calculate potential scale reduction 
-  n = nInter / 2 # number of samples used in each seq
-  m = nChain
-grandMean = extractedPara %>% apply(FUN = mean, MARGIN = c(3))
-seqMean = extractedPara %>% apply(FUN = mean, MARGIN = c(2,3))
-seqVar = extractedPara %>% apply(FUN = var, MARGIN = c(2,3)) # sample variance with n-1 degree
-B = seqMean %>% apply(FUN = var, MARGIN = 2) * n
-W =  seqVar %>% apply(FUN = function(x) sum(x) / m, MARGIN = 2)
-sigmaSquare = (n-1) / n * W + B / n
-V = sigmaSquare + B/(nChain * n)
-covS2X2 = mapply(FUN = cov, lapply(1 : length(pars), function(i) seqVar[,i]),
-                 lapply(1 : length(pars), function(i) seqMean[,i]^2))
-covS2X = mapply(FUN = cov, lapply(1 : length(pars), function(i) seqVar[,i]),
-                 lapply(1 : length(pars), function(i) seqMean[,i]))
-VVar = ((n-1) / n) ^ 2 /  m * apply(seqVar, FUN = var, MARGIN = 2) +
-  ((m+1) / m / n)^2 *2 /(m - 1) * B ^ 2 +
-  2 * (m+1) * (n-1) / (m * n^2) * n / m * (covS2X2 - 2 * grandMean * covS2X)
-df =  2 * V^2 / var(V)
-R = V / W * df / (df - 2)
+  chain1 = mcmc(data= extractedPara[,1,])
+  chain2 = mcmc(data= extractedPara[,2,])
+  chain3 = mcmc(data= extractedPara[,3,])
+  chain4 = mcmc(data= extractedPara[,4,])
+  mcOb = mcmc.list(chain1, chain2, chain3, chain4)
+  psr = gelman.diag(mcOb, confidence = 0.95, transform=FALSE, autoburnin=F,
+                  multivariate=TRUE)$psrf
+  save("psr", file = sprintf("%s_psr.RData", fileName))
 }
-
-
-
-
 
 
