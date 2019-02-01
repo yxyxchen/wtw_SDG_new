@@ -35,8 +35,8 @@ for(cIdx in 1 : 2){
   kmGrid = seq(0, tMax, by=0.1) 
   
   # initialize outputs
-  totalEarnings_ = array(0, c(nComb, nBlock, nRep))
-  AUC_ = array(0, c(nComb, nBlock, nRep))
+  totalEarnings_ = matrix(0, c(n,  nRep))
+  AUC_ = array(0, c(n, nRep))
   
   # loop over combIdx
   for(combIdx in 1 : nComb){
@@ -65,7 +65,6 @@ for(cIdx in 1 : 2){
         if (plotTrialwiseData) {
           trialPlots(thisTrialData,label)
         }
-        
         # survival analysis
         kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
         AUC_[combIdx, bkIdx, rIdx] = kmscResults[['auc']]

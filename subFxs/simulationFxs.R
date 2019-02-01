@@ -13,7 +13,7 @@ getSimModelFun = function(modelName){
 }
 
 ################ monte ######################
-monte = function(para, cond){
+monte = function(para, cond, nBlock){
   # parse para
   phi = para[1]
   tau = para[2]
