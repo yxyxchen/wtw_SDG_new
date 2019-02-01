@@ -26,18 +26,15 @@ plotWTW = F
 plotTimeEarnings = F   # no good effect 
 plotTrialEarnings =  F  # no good effect 
 
-# look into long-AUC subjects in LP condition
-sIdxList = match(blockData$id[blockData$AUC > 20 & blockData$blockNum == 1], hdrData$ID)
-
 # initialize outputs, organised by block
 tGrid = seq(0, blockSecs, by = 0.1)
 AUC = numeric(length =n * nBlock)
 totalEarnings =  numeric(length =n * nBlock)
 wtwEarly = numeric(length =n * nBlock)
 # descriptive statistics for individual subjects and blocks
-for (sIdx in sIdxList) {
+for (sIdx in 1 : n) {
   thisID = allIDs[sIdx]
-  for (bkIdx in 1:1){
+  for (bkIdx in 1:nBlock){
     # select data 
     thisTrialData = trialData[[thisID]]
     thisBlockIdx = (thisTrialData$blockNum == bkIdx)

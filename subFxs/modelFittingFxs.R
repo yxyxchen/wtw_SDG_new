@@ -24,14 +24,14 @@ modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, mo
   tempt = extractedPara %>%
     adply(2, function(x) x) %>%  # change arrays into 2-d dataframe 
     select(-chains) 
-  write.csv(tempt, file = sprintf("%s.txt", fileName), row.names=FALSE)
+  write.csv(matrix(unlist(tempt), ncol = length(pars) + 1), file = sprintf("%s.txt", fileName), row.names=FALSE)
   # calculate and save WAIC
   log_lik = extract_log_lik(fit) # quit time consuming 
   WAIC = waic(log_lik)
   save("WAIC", file = sprintf("%s_waic.RData", fileName))
   # save summarized fit 
   fitSumary <- summary(fit,pars = c("phi", "tau", "gamma", "lp__", "LL_all"), use_cache = F)$summary
-  save("fitSummary", file = sprintf("%s_summary.RData", fileName))
+  write.csv(matrix(fitSumary, nrow = length(pars) + 2), file = sprintf("%s_summary.txt", fileName))
 }
 
 

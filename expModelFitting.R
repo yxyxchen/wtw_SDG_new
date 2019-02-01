@@ -23,35 +23,20 @@ expModelFitting = function(modelName, pars){
   allIDs = hdrData$ID                   # column of subject IDs
   n = length(allIDs)                    # n
   
-  trialData = trialData[(1 : length(trialData)) %in% allIDs]
-  timeWaitedList = sapply(1 : n, function(sIdx) {
-    tempt = trialData[[sIdx]]
-    junk = tempt$timeWaited
-  })
-  trialEarningsList = sapply(1 :n, function(sIdx) {
-    tempt = trialData[[sIdx]]
-    junk = tempt$trialEarnings
-  })
-  scheduledWaitList = sapply(1 :n, function(sIdx) {
-    tempt = trialData[[sIdx]]
-    junk = tempt$scheduledWait
-  })
-  condList = sapply(1 :n, function(sIdx) {
-    tempt = trialData[[sIdx]]
-    junk = unique(tempt$condition) 
-  })
-  wIniList = ifelse(condList == "HP", wInis[1], wInis[2])
-  timeWaitedList = sapply(1:n, function(sIdx){
-    ifelse(trialEarningsList[[sIdx]] > 0, scheduledWaitList[[sIdx]], timeWaitedList[[sIdx]])
-  })
-  
+  # extract input arguments from no stree subjects 
+  load("genData/expDataAnalysis/blockData.RData")
+  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
+  nNoStress = length(noStressIDList)
+
   # loop over suvject
-  for(sIdx in 1 : 20){
-    wIni = wIniList[[sIdx]]
-    cond = condList[[sIdx]]
-    trialEarnings= trialEarningsList[[sIdx]]
-    timeWaited = timeWaitedList[[sIdx]]
-    fileName = sprintf("genData/expModelFitting/monteNew/s%d", sIdx)
+  for(i in 1 : nNoStress){
+    thisID = noStressIDList[[i]]
+    thisTrialData = trialData[[thisID]]
+    timeWaited = thisTrialData$timeWaited
+    trialEarnings = thisTrialData$trialEarnings
+    cond = unique(thisTrialData$condition)
+    wIni = ifelse(cond == "HP", wInis[1], wInis[2])
+    fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, thisID)
     modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
   }
 }
