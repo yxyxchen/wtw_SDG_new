@@ -10,7 +10,7 @@ expModelFitting = function(modelName, pars){
   source('subFxs/modelFittingFxs.R') # for fitting single case 
   source('subFxs/wtwSettings.R')
   source('subFxs/loadFxs.R') # for load data
-  
+  library("coda") # calculate psr in modelFittingFxs
   # compile the stan model 
   dir.create(sprintf("genData/expModelFitting/%s", modelName))
   model = stan_model(file = sprintf("stanModels/%s.stan", modelName))
@@ -46,12 +46,12 @@ expModelFitting = function(modelName, pars){
   })
   
   # loop over suvject
-  for(sIdx in 1 : n){
+  for(sIdx in 1 : 20){
     wIni = wIniList[[sIdx]]
     cond = condList[[sIdx]]
     trialEarnings= trialEarningsList[[sIdx]]
     timeWaited = timeWaitedList[[sIdx]]
-    fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, sIdx)
+    fileName = sprintf("genData/expModelFitting/monteNew/s%d", sIdx)
     modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
   }
 }

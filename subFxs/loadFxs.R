@@ -73,3 +73,18 @@ loadAllData = function() {
   return(outputData)
   
 } 
+
+
+# l
+loadExpPara = function(modelName, pars){
+  n = 120
+  expPara = matrix(NA, n, (length(pars) + 1))
+  for(sIdx in 1 : n){
+    fileName = sprintf("genData/expModelFitting/%s/s%d.txt", modelName, sIdx)
+    junk = read.csv(fileName)
+    expPara[sIdx, ] = apply(junk , MARGIN = 2, mean)
+  }
+  expPara = data.frame(expPara)
+  colnames(expPara) = c(pars, "LL_all")
+  return(expPara)
+}

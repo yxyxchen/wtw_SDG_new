@@ -2,44 +2,38 @@ library("ggplot2")
 source("subFxs/plotThemes.R")
 load("genData/expDataAnalysis/blockData.RData")
 blockData = blockData[blockData$blockNum == 1,]
-source("subFxs/simulationFxs.R") # used in simulation
-source("subFxs/taskFxs.R") # used in simulation
+source("subFxs/taskFxs.R") # used in repetition
+source("subFxs/repetitionFxs.R")
 source("subFxs/analysisFxs.R") # for analysis
-load("wtwSettings.RData") # used in simulation 
-
+load("wtwSettings.RData") # used in repetition
+source("subFxs/loadFxs.R") # 
 
 # input 
-modelName = "monteSteep"
-pars = c("phi", "tau", "gamma", "steep")
-expPara = loadExpPara("monte", c("phi", "tau", "gamma", "steep"))
-modelFun = getSimModelFun(modelName)
+modelName = "monte"
+pars = c("phi", "tau", "gamma")
+expPara = loadExpPara("monte", c("phi", "tau", "gamma"))
 
-# 
-loadExpPara = function(modelName, pars){
-  n = 120
-  expPara = matrix(NA, n, (length(pars) + 1))
-  for(sIdx in 1 : n){
-    fileName = sprintf("genData/expModelFitting/%s/s%d.txt", modelName, sIdx)
-    junk = read.csv(fileName)
-    expPara[sIdx, ] = apply(junk , MARGIN = 2, mean)
-  }
-  expPara = data.frame(expPara)
-  colnames(expPara) = c(pars, "LL_all")
-  expPara$id = unique(blockData$id)
-  return(expPara)
-}
+# load raw data 
+allData = loadAllData()
+hdrData = allData$hdrData  
+allIDs = hdrData$ID     
+expTrialData = allData$trialData       
+  
 
 # simluation 
+repModelFun = getRepModelFun(modelName)
 nRep = 10 # number of repetitions
 n = length(unique(blockData$id)) # number of subjects 
 trialData = vector(length = n * nRep, mode ='list')
 repNo = matrix(1 : (n * nRep), nrow = n, ncol = nRep)
 for(sIdx in 1 : n){
-  id = expPara$id[sIdx]
+  id = allIDs[sIdx]
   para = as.double(expPara[sIdx, 1 : length(pars)])
   cond = unique(blockData$condition[blockData$id == id])
+  thisExpTrialData = expTrialData[[id]]
+  schedualeWait = thisExpTrialData$scheduledWait[thisExpTrialData$blockNum == 1]
   for(rIdx in 1 : nRep){
-    tempt = modelFun(para, cond, 1)
+    tempt = repModelFun(para, cond, schedualeWait)
     trialData[[repNo[sIdx, rIdx]]] = tempt
   }
 }
@@ -58,8 +52,8 @@ for(sIdx in 1 : n){
   for(rIdx in 1 : nRep){
     if (plotTrialwiseData) {
       trialPlots(thisTrialData,label)
+      readline("continue")
     }
-    readline("continue")
     thisTrialData = trialData[[repNo[sIdx, rIdx]]]
     totalEarnings_[sIdx, rIdx] =  sum(thisTrialData$trialEarnings)
     kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
