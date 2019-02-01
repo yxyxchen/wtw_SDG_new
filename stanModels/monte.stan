@@ -18,9 +18,9 @@ transformed data {
   real tokenValue = 10;
   }
   parameters {
-  real<lower = 0, upper = 1> phi;
-  real<lower = 1, upper = 30> tau;
-  real<lower = 0, upper = 1> gamma;
+  real<lower = 0, upper = 0.5> phi;
+  real<lower = 2, upper = 22> tau;
+  real<lower = 0.7, upper = 1> gamma;
 }
 transformed parameters{
   // initialize action values 

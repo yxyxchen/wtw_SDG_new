@@ -26,15 +26,15 @@ expModelFitting = function(modelName, pars){
   trialData = trialData[(1 : length(trialData)) %in% allIDs]
   timeWaitedList = sapply(1 : n, function(sIdx) {
     tempt = trialData[[sIdx]]
-    junk = tempt$timeWaited[1 : sum(tempt$blockNum == 1)]
+    junk = tempt$timeWaited
   })
   trialEarningsList = sapply(1 :n, function(sIdx) {
     tempt = trialData[[sIdx]]
-    junk = tempt$trialEarnings[1 : sum(tempt$blockNum == 1)]
+    junk = tempt$trialEarnings
   })
   scheduledWaitList = sapply(1 :n, function(sIdx) {
     tempt = trialData[[sIdx]]
-    junk = tempt$scheduledWait[1 : sum(tempt$blockNum == 1)]
+    junk = tempt$scheduledWait
   })
   condList = sapply(1 :n, function(sIdx) {
     tempt = trialData[[sIdx]]
