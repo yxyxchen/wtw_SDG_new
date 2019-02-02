@@ -24,20 +24,14 @@ modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, mo
   tempt = extractedPara %>%
     adply(2, function(x) x) %>%  # change arrays into 2-d dataframe 
     select(-chains) 
-  write.csv(tempt, file = sprintf("%s.txt", fileName), row.names=FALSE)
+  write.csv(matrix(unlist(tempt), ncol = length(pars) + 1), file = sprintf("%s.txt", fileName), row.names=FALSE)
   # calculate and save WAIC
   log_lik = extract_log_lik(fit) # quit time consuming 
   WAIC = waic(log_lik)
   save("WAIC", file = sprintf("%s_waic.RData", fileName))
-  # calculate potential scale reduction 
-  chain1 = mcmc(data= extractedPara[,1,])
-  chain2 = mcmc(data= extractedPara[,2,])
-  chain3 = mcmc(data= extractedPara[,3,])
-  chain4 = mcmc(data= extractedPara[,4,])
-  mcOb = mcmc.list(chain1, chain2, chain3, chain4)
-  psr = gelman.diag(mcOb, confidence = 0.95, transform=FALSE, autoburnin=F,
-                  multivariate=TRUE)$psrf
-  save("psr", file = sprintf("%s_psr.RData", fileName))
+  # save summarized fit 
+  fitSumary <- summary(fit,pars = c("phi", "tau", "gamma", "lp__", "LL_all"), use_cache = F)$summary
+  write.csv(matrix(fitSumary, nrow = length(pars) + 2), file = sprintf("%s_summary.txt", fileName))
 }
 
 
