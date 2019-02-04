@@ -8,8 +8,8 @@ expModelFitting = function(modelName, pars){
   library("loo")
   # source scripts
   source('subFxs/modelFittingFxs.R') # for fitting single case 
-  source('subFxs/wtwSettings.R')
   source('subFxs/loadFxs.R') # for load data
+  load("wtwSettings.R")
   library("coda") # calculate psr in modelFittingFxs
   # compile the stan model 
   dir.create(sprintf("genData/expModelFitting/%s", modelName))
