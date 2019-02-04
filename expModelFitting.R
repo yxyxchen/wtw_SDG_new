@@ -33,6 +33,7 @@ expModelFitting = function(modelName, pars){
     thisID = noStressIDList[[i]]
     thisTrialData = trialData[[thisID]]
     timeWaited = thisTrialData$timeWaited
+    
     trialEarnings = thisTrialData$trialEarnings
     cond = unique(thisTrialData$condition)
     wIni = ifelse(cond == "HP", wInis[1], wInis[2])

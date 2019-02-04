@@ -84,6 +84,7 @@ model {
       values[1] = Qwaits[i, tIdx] * tau;
       values[2] = Qquits[tIdx] * tau;
       action ~ categorical_logit(values);
+      //target += categorical_logit_lpmf(action | values);
     } 
   }
 }

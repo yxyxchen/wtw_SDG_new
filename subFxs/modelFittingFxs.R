@@ -1,5 +1,5 @@
 # set up 
-modelFitting = function(cond, wIni, timeWaited, trialEarning, fileName, pars, model){
+modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, model){
   tMax = ifelse(cond == "HP", tMaxs[1], tMaxs[2])
   condIdx = ifelse(cond =="HP", 1, 2)
   nChain = 4
