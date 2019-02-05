@@ -18,7 +18,7 @@ transformed data {
   real tokenValue = 10;
   }
   parameters {
-  real<lower = 0, upper = 0.5> phi;
+  real<lower = 0, upper = 0.3> phi;
   real<lower = 2, upper = 22> tau;
   real<lower = 0.7, upper = 1> gamma;
 }
@@ -67,9 +67,9 @@ transformed parameters{
   }// end of the loop
 }
 model {
-  phi ~ uniform(0, 1);
-  tau ~ uniform(1, 30);
-  gamma ~ uniform(0, 1);
+  phi ~ uniform(0, 0.3);
+  tau ~ uniform(2, 22);
+  gamma ~ uniform(0.7, 1);
   
   // calculate the likelihood 
   for(tIdx in 1 : N){

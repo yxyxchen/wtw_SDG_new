@@ -21,12 +21,12 @@ transformed data {
   real<lower = 0, upper = 0.3> phi;
   real<lower = 2, upper = 22> tau;
   real<lower = 0.7, upper = 1> gamma;
-  real<lower = -0.5, upper = 0.5> steep;
+  real<lower = 0.2, upper = 1> ratio; 
 }
 transformed parameters{
   // initialize action values 
-  vector[nTimeStep] Qwait;
-  real Qquit;
+  vector[nTimeStep] Qwait = rep_vector(wIni, nTimeStep);
+  real Qquit = wIni * ratio;
   
   // initialize recordings of action values 
   matrix[nTimeStep, N] Qwaits = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
@@ -44,11 +44,6 @@ transformed parameters{
   }
   
   // fill the first trial of Qwaits and Quits
-  for(i in 1 : nTimeStep){
-    Qwait[i] = wIni * ((i - 1) * steep + 1) ;
-  
-  }
-  Qquit = wIni * gamma ^(iti / stepDuration);
   Qwaits[,1] = Qwait;
   Qquits[1] = Qquit;
 
@@ -76,8 +71,7 @@ model {
   phi ~ uniform(0, 0.3);
   tau ~ uniform(2, 22);
   gamma ~ uniform(0.7, 1);
-  steep ~ uniform(-0.5, 0.5);
-
+  ratio ~ uniform(0.2, 1);
   
   // calculate the likelihood 
   for(tIdx in 1 : N){
@@ -92,6 +86,7 @@ model {
       values[1] = Qwaits[i, tIdx] * tau;
       values[2] = Qquits[tIdx] * tau;
       action ~ categorical_logit(values);
+      //target += categorical_logit_lpmf(action | values);
     } 
   }
 }

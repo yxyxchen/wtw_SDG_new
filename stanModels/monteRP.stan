@@ -18,10 +18,10 @@ transformed data {
   real tokenValue = 10;
   }
   parameters {
-  real<lower = 0, upper = 1> phiR;
-  real<lower = 0, upper = 1> phiP;
-  real<lower = 1, upper = 30> tau;
-  real<lower = 0, upper = 1> gamma;
+  real<lower = 0, upper = 0.5> phiR;
+  real<lower = 0, upper = 0.5> phiP;
+  real<lower = 2, upper = 22> tau;
+  real<lower = 0.7, upper = 1> gamma;
 }
 transformed parameters{
   // initialize action values 
@@ -85,10 +85,10 @@ transformed parameters{
   }// end of the loop
 }
 model {
-  phiR ~ uniform(0, 1);
-  phiP ~ uniform(0, 1);
-  tau ~ uniform(1, 30);
-  gamma ~ uniform(0, 1);
+  phiR ~ uniform(0, 0.5);
+  phiP ~ uniform(0, 0.5);
+  tau ~ uniform(2, 22);
+  gamma ~ uniform(0.7, 1);
   
   // calculate the likelihood 
   for(tIdx in 1 : N){

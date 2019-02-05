@@ -41,7 +41,10 @@ trialPlots <- function(blockData,blockLabel) {
     scale_color_manual(values = c('blue', 'red', 'black')) + 
     xlab('Trial num') + ylab('Trial duration / s') + ggtitle(label) + displayTheme
   print(p)
+  return(p)
 }
+
+
 
 
 # calculate kaplan-meier and area under the curve

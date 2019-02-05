@@ -3,20 +3,45 @@ source("subFxs/plotThemes.R")
 load("genData/expDataAnalysis/blockData.RData")
 
 loadExpPara = function(modelName, pars){
-  n = 120
-  expPara = matrix(NA, n, (length(pars) + 1))
-  for(sIdx in 1 : n){
-    fileName = sprintf("genData/expModelFitting/%s/s%d.txt", modelName, sIdx)
-    junk = read.csv(fileName)
-    expPara[sIdx, ] = apply(junk , MARGIN = 2, mean)
+  load("genData/expDataAnalysis/blockData.RData")
+  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
+  nNoStress = length(noStressIDList)
+  nE = (length(pars) + 2) 
+  expPara = matrix(NA, nNoStress, nE * 4)
+  for(i in 1 : nNoStress){
+    ID = noStressIDList[i]
+    fileName = sprintf("genData/expModelFitting/%s/s%d_summary.txt", modelName, ID)
+    junk = read.csv(fileName, header = F)
+    if(ncol(junk) == 11){
+      junk = read.csv(fileName, header = T, row.names = 1)
+    }
+    
+    expPara[i, 1:nE] = junk[,1]
+    expPara[i, (nE + 1) : (2 * nE)] = junk[,2]
+    expPara[i, (2*nE + 1) : (3 * nE)] = junk[,9]
+    expPara[i, (3 * nE + 1) : (4 * nE)] = junk[,10]
   }
   expPara = data.frame(expPara)
-  colnames(expPara) = c(pars, "LL_all")
-  expPara$id = unique(blockData$id)
+
+  junk = c(pars, "LL_all", "lp__")
+  colnames(expPara) = c(junk, paste0(junk, "SD"), paste0(junk, "Effe"), paste0(junk, "Rhat"))
+  expPara$id = noStressIDList  # needed for left_join
   return(expPara)
 }
 
-plotParaAUC = function(expPara, paraName, blockData){
+ggplot(expPara, aes(phi)) + geom_histogram()
+ggplot(expPara, aes(tau)) + geom_histogram()
+ggplot(expPara, aes(gamma)) + geom_histogram()
+ggplot(expPara, aes(gammaSD)) + geom_histogram()
+ggplot(expPara, aes(gammaRhat)) + geom_histogram() +
+  geom_vline(xintercept = 1, color = "red")
+ggplot(expPara, aes(gammaRhat)) + geom_histogram() +
+  geom_vline(xintercept = 1, color = "red")
+
+ggplot(expPara, aes(gammaEffe)) + geom_histogram()
+
+
+plotParaAUC = function(expPara, paraName, blockData, deleteID){
   rhoHP = vector(length = 3)
   rhoLP = vector(length = 3)
   pHP = vector(length = 3)
@@ -40,16 +65,21 @@ plotParaAUC = function(expPara, paraName, blockData){
       hjust   = -0.5,
       vjust   = -3,
       color = "blue",
-      size = 5
+      size = 2
     )
   print(p)
 } 
 
 ####### monte
-expPara = loadExpPara("monte")
-plotParaAUC(expPara, "phi", blockData)
-plotParaAUC(expPara, "tau", blockData)
-plotParaAUC(expPara, "gamma", blockData)
+
+expPara = loadExpPara("monte", c("phi", "tau", "gamma"))
+useID = noStressIDList[expPara$gammaRhat < 2]
+plotParaAUC(expPara[expPara$id %in% useID, c(1:nE, 21)], "phi",
+            blockData[blockData$stress == "no stress" & blockData$id %in% useID, ])
+plotParaAUC(expPara[expPara$id %in% useID, c(1:nE, 21)], "gamma",
+            blockData[blockData$stress == "no stress" & blockData$id %in% useID, ])
+plotParaAUC(expPara[expPara$id %in% useID, c(1:nE, 21)], "tau",
+            blockData[blockData$stress == "no stress" & blockData$id %in% useID, ])
 #####
 
 expPara = loadExpPara("monteRP", c("phiR", "phiP", "tau", "gamma")) # numPara and nPara

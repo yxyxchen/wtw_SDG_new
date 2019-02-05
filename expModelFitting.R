@@ -9,7 +9,7 @@ expModelFitting = function(modelName, pars){
   # source scripts
   source('subFxs/modelFittingFxs.R') # for fitting single case 
   source('subFxs/loadFxs.R') # for load data
-  load("wtwSettings.R")
+  load("wtwSettings.RData")
   library("coda") # calculate psr in modelFittingFxs
   # compile the stan model 
   dir.create(sprintf("genData/expModelFitting/%s", modelName))
@@ -29,7 +29,7 @@ expModelFitting = function(modelName, pars){
   nNoStress = length(noStressIDList)
 
   # loop over suvject
-  for(i in 1 : nNoStress){
+  for(i in 2 : nNoStress){
     thisID = noStressIDList[[i]]
     thisTrialData = trialData[[thisID]]
     timeWaited = thisTrialData$timeWaited
