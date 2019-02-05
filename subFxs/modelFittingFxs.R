@@ -1,5 +1,6 @@
 # set up 
 modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, model){
+  load("wtwSettings.RData")
   tMax = ifelse(cond == "HP", tMaxs[1], tMaxs[2])
   condIdx = ifelse(cond =="HP", 1, 2)
   nChain = 4

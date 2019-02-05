@@ -1,3 +1,4 @@
+source("expModelFitting.R")
 modelName = "monte"
 pars = c("phi", "tau", "gamma")
 expModelFitting(modelName, pars)
