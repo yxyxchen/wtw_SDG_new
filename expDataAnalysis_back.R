@@ -31,10 +31,11 @@ tGrid = seq(0, blockSecs, by = 0.1)
 AUC = numeric(length =n * nBlock)
 totalEarnings =  numeric(length =n * nBlock)
 wtwEarly = numeric(length =n * nBlock)
+noIdx = matrix(1 : (n * nBlock), n, nBlock, byrow = T)
 # descriptive statistics for individual subjects and blocks
 for (sIdx in 1 : n) {
   thisID = allIDs[sIdx]
-  for (bkIdx in 1: nBlock){
+  for (bkIdx in 1:nBlock){
     # select data 
     thisTrialData = trialData[[thisID]]
     thisBlockIdx = (thisTrialData$blockNum == bkIdx)
@@ -88,29 +89,4 @@ blockData = data.frame(id = rep(allIDs, each = nBlock), blockNum = rep( t(1 : nB
                        stress = factor(rep(hdrData$stress, each = nBlock), levels = c("no stress", "stress")), AUC = AUC, wtwEarly = wtwEarly,
                        totalEarnings = totalEarnings)
 save(blockData, file = 'genData/expDataAnalysis/blockData.RData')
-
-# get session data 
-AUC = numeric(length =n)
-totalEarnings =  numeric(length =n)
-for (sIdx in 1 : n) {
-  thisID = allIDs[sIdx]
-  # select data 
-  thisTrialData = trialData[[thisID]]
-  
-  # generate arguments for later analysis 
-  label = sprintf('Subject %s, Cond %s, Stress %s)',thisID, hdrData$condition[sIdx], hdrData$stress[sIdx])
-  tMax = ifelse(hdrData$condition[sIdx] == conditions[1], tMaxs[1], tMaxs[2])
-  kmGrid = seq(0, tMax, by= 0.1) # grid on which to average survival curves.
-  
-  totalEarnings[sIdx] =  sum(blockData$totalEarnings[blockData$id == thisID])
-  
-  # survival analysis
-  kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
-  AUC[sIdx] = kmscResults[['auc']]
-}
-subData = data.frame(id = allIDs, condition = factor(hdrData$condition, levels = c("HP", "LP")),
-                       stress = factor(hdrData$stress, levels = c("no stress", "stress")), AUC = AUC, 
-                       totalEarnings = totalEarnings)
-save(subData, file = 'genData/expDataAnalysis/subData.RData')
-
 

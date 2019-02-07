@@ -88,3 +88,32 @@ loadExpPara = function(modelName, pars){
   colnames(expPara) = c(pars, "LL_all")
   return(expPara)
 }
+
+
+loadExpPara = function(modelName, pars){
+  nE = length(pars) + 2
+  load("genData/expDataAnalysis/blockData.RData")
+  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
+  nNoStress = length(noStressIDList)
+  nE = (length(pars) + 2) 
+  expPara = matrix(NA, nNoStress, nE * 4)
+  for(i in 1 : nNoStress){
+    ID = noStressIDList[i]
+    fileName = sprintf("genData/expModelFitting/%s/s%d_summary.txt", modelName, ID)
+    junk = read.csv(fileName, header = F)
+    if(ncol(junk) == 11){
+      junk = read.csv(fileName, header = T, row.names = 1)
+    }
+    
+    expPara[i, 1:nE] = junk[,1]
+    expPara[i, (nE + 1) : (2 * nE)] = junk[,2]
+    expPara[i, (2*nE + 1) : (3 * nE)] = junk[,9]
+    expPara[i, (3 * nE + 1) : (4 * nE)] = junk[,10]
+  }
+  expPara = data.frame(expPara)
+  
+  junk = c(pars, "LL_all", "lp__")
+  colnames(expPara) = c(junk, paste0(junk, "SD"), paste0(junk, "Effe"), paste0(junk, "Rhat"))
+  expPara$id = noStressIDList  # needed for left_join
+  return(expPara)
+}

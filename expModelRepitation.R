@@ -2,6 +2,7 @@ library("ggplot2")
 library(stringi)
 source("subFxs/plotThemes.R")
 load("genData/expDataAnalysis/blockData.RData")
+load("genData/expDataAnalysis/subData.RData")
 blockData = blockData[blockData$blockNum == 1,]
 source("subFxs/taskFxs.R") # used in repetition
 source("subFxs/repetitionFxs.R")
@@ -9,67 +10,47 @@ source("subFxs/analysisFxs.R") # for analysis
 load("wtwSettings.RData") # used in repetition
 source("subFxs/loadFxs.R") # 
 
-loadExpPara = function(modelName, pars){
-  load("genData/expDataAnalysis/blockData.RData")
-  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
-  nNoStress = length(noStressIDList)
-  nE = (length(pars) + 2) 
-  expPara = matrix(NA, nNoStress, nE * 4)
-  for(i in 1 : nNoStress){
-    ID = noStressIDList[i]
-    fileName = sprintf("genData/expModelFitting/%s/s%d_summary.txt", modelName, ID)
-    junk = read.csv(fileName, header = F)
-    if(ncol(junk) == 11){
-      junk = read.csv(fileName, header = T, row.names = 1)
-    }
-    
-    expPara[i, 1:nE] = junk[,1]
-    expPara[i, (nE + 1) : (2 * nE)] = junk[,2]
-    expPara[i, (2*nE + 1) : (3 * nE)] = junk[,9]
-    expPara[i, (3 * nE + 1) : (4 * nE)] = junk[,10]
-  }
-  expPara = data.frame(expPara)
-  
-  junk = c(pars, "LL_all", "lp__")
-  colnames(expPara) = c(junk, paste0(junk, "SD"), paste0(junk, "Effe"), paste0(junk, "Rhat"))
-  expPara$id = noStressIDList  # needed for left_join
-  return(expPara)
-}
 # input 
-modelName = "monte"
+modelName = "monteRP"
 pars = c("phi", "tau", "gamma")
-expPara = loadExpPara("monte", c("phi", "tau", "gamma"))
-
+pars = c("phiR","phiP", "tau", "gamma")
+expPara = loadExpPara(modelName, pars)
+useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | 
+                           expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100)]
+useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | expPara$steepRhat > 1.1 |
+                   expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$steepEffe < 100)]
+useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRRhat >1.1 | expPara$tauRhat > 1.1 | expPara$phiPRhat>1.1 | 
+                         expPara$phiREffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$phiPEffe < 100)]
 # load raw data 
 allData = loadAllData()
 hdrData = allData$hdrData  
 allIDs = hdrData$ID     
 expTrialData = allData$trialData       
   
-
 # simluation 
 repModelFun = getRepModelFun(modelName)
-nRep = 10 # number of repetitions
+nRep = 10# number of repetitions
 noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
 nNoStress = length(noStressIDList)
 trialData = vector(length = nNoStress * nRep, mode ='list')
 repNo = matrix(1 : (nNoStress * nRep), nrow = nNoStress, ncol = nRep)
 for(sIdx in 1 : nNoStress){
   id = noStressIDList[[sIdx]]
-  para = as.double(expPara[sIdx, 1 : length(pars)])
+  # para = as.double(expPara[sIdx, 1 : length(pars)])
+  paraList = read.table(sprintf("genData/expModelFitting/%s/s%d.txt", modelName, id),
+                        sep = ",", row.names = NULL)
   cond = unique(blockData$condition[blockData$id == id])
   thisExpTrialData = expTrialData[[id]]
   schedualeWait = thisExpTrialData$scheduledWait
   for(rIdx in 1 : nRep){
+    para = as.double(paraList[sample(1 : nrow(paraList), 1), 1 : length(pars)])
     tempt = repModelFun(para, cond, schedualeWait)
     trialData[[repNo[sIdx, rIdx]]] = tempt
   }
 }
 
-# analysis repetion 
-plotTrialwiseData = F
+# calculate AUC 
 plotKMSC = F
-plotWTW = F
 # initialize 
 totalEarnings_ = matrix(0, nNoStress, nRep)
 AUC_ = matrix(0, nNoStress, nRep)
@@ -83,10 +64,6 @@ for(sIdx in 1 : nNoStress){
   timeWaitedMatrix = matrix(0, nTrial, nRep)
   for(rIdx in 1 : nRep){
     thisTrialData = trialData[[repNo[sIdx, rIdx]]]
-    if (plotTrialwiseData) {
-      trialPlots(thisTrialData,label)
-      readline("continue")
-    }
     junk = thisTrialData$timeWaited
     timeWaitedMatrix[,rIdx] = junk
     totalEarnings_[sIdx, rIdx] =  sum(thisTrialData$trialEarnings)
@@ -97,11 +74,15 @@ for(sIdx in 1 : nNoStress){
 }
 
 # AUC prediction
-plotData = blockData[blockData$stress == "no stress",]
+plotData = subData[subData$stress == "no stress",]
 plotData$AUCRep = apply(AUC_, MARGIN = 1, FUN = mean)
-useID = noStressIDList[expPara$gammaRhat < 2]
+plotData$AUCRepSd = apply(AUC_, MARGIN = 1, FUN = sd)
+plotData$AUCRepMin = plotData$AUCRep - plotData$AUCRepSd / sqrt(length(useID))
+plotData$AUCRepMax = plotData$AUCRep + plotData$AUCRepSd / sqrt(length(useID))
 ggplot(plotData[plotData$id %in% useID, ],
-       aes(AUC, AUCRep)) + geom_point() + facet_grid(~condition) + geom_abline(slope = 1, xintercept = 0)
+       aes(AUC, AUCRep)) + geom_point() + facet_grid(~condition) + 
+  geom_abline(slope = 1, intercept = 0) + geom_errorbar(aes(ymin = AUCRepMin, ymax = AUCRepMax)) + 
+  displayTheme
 
 
 # trialData prediction
@@ -125,7 +106,6 @@ for(sIdx in 1 : nNoStress){
     p = ggplot(plotData, aes(trialNum, timeWaited)) + geom_line(alpha = 0.7, aes(color = source))  +
       geom_point(data = plotData[plotData$quitIdx == 1 & plotData$source == "exp", ], aes(trialNum, timeWaited)) + ggtitle(label)+
       displayTheme
-      
     print(p)
     readline("continue")
   }

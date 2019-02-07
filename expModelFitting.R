@@ -30,15 +30,15 @@ expModelFitting = function(modelName, pars){
 
   # loop over suvject
   for(i in 1 : nNoStress){
-    thisID = noStressIDList[[i]]
-    thisTrialData = trialData[[thisID]]
-    timeWaited = thisTrialData$timeWaited
-    scheduledWait = thisTrialData$scheduledWait
-    trialEarnings = thisTrialData$trialEarnings
-    timeWaited[trialEarnings > 0] = scheduledWait[trialEarnings > 0]
-    cond = unique(thisTrialData$condition)
-    wIni = ifelse(cond == "HP", wInis[1], wInis[2])
-    fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, thisID)
-    modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
+      thisID = noStressIDList[[i]]
+      thisTrialData = trialData[[thisID]]
+      timeWaited = thisTrialData$timeWaited
+      scheduledWait = thisTrialData$scheduledWait
+      trialEarnings = thisTrialData$trialEarnings
+      timeWaited[trialEarnings > 0] = scheduledWait[trialEarnings > 0]
+      cond = unique(thisTrialData$condition)
+      wIni = ifelse(cond == "HP", wInis[1], wInis[2])
+      fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, thisID)
+      modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
   }
 }
