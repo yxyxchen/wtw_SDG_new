@@ -62,4 +62,15 @@ plotParaAUC(expPara, "gamma", subData, useID)
 hist(expPara$steep)
 
 
-
+#####
+#monteRatio
+expPara = loadExpPara("monteRatio", c("phi", "tau", "gamma", "ratio")) # numPara and nPara
+RhatCols = which(str_detect(colnames(expPara), "hat"))[1 : length(pars)]
+EffeCols = which(str_detect(colnames(expPara), "Effe"))[1 : length(pars)]
+useID = noStressIDList[apply(expPara[,RhatCols] < 1.1, MARGIN = 1, sum) == length(pars) &
+                         apply(expPara[,EffeCols] >100, MARGIN = 1, sum) == length(pars)]
+plotParaAUC(expPara, "tau", subData, useID)
+plotParaAUC(expPara, "ratio", subData, useID)
+plotParaAUC(expPara, "phi", subData, useID)
+plotParaAUC(expPara, "gamma", subData, useID) # log gamma
+hist(expPara$ratio)

@@ -1,5 +1,5 @@
 library("ggplot2")
-library(stringi)
+library(stringr)
 source("subFxs/plotThemes.R")
 load("genData/expDataAnalysis/subData.RData")
 source("subFxs/taskFxs.R") # used in repetition
@@ -11,7 +11,8 @@ load("wtwSettings.RData")
 load("genData/expDataAnalysis/kmOnGrid.RData")
 
 # input 
-modelName = "monte"
+modelName = "monteSteepExp"
+pars = c("phi", "tau", "gamma", "Ratio")
 pars = c("phi", "tau", "gamma")
 pars = c("phi", "tau", "gamma", "steep")
 pars = c("phiR","phiP", "tau", "gamma")
@@ -32,7 +33,7 @@ expTrialData = allData$trialData
 # simluation 
 set.seed(123)
 repModelFun = getRepModelFun(modelName)
-nRep = 10# number of repetitions
+nRep = 10 # number of repetitions
 noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
 nNoStress = length(noStressIDList)
 trialData = vector(length = nNoStress * nRep, mode ='list')
@@ -130,23 +131,27 @@ for(sIdx in 1 : nNoStress){
   nTrial = nrow(thisExpTrialData)
   if(thisID %in% useID){
     para = as.double(expPara[sIdx, 1 : length(pars)])
-    label = sprintf('Subject %s, %s, %s',thisID, hdrData$condition[sIdx], hdrData$stress[sIdx])
-    label = paste(label, paste(round(para, 3), collapse = "", seq = " "))
-    
+   
     # prepara data 
     timeWaited = thisExpTrialData$timeWaited
     trialEarnings = thisExpTrialData$trialEarnings
     scheduledWait = thisExpTrialData$scheduledWait
     timeWaited[trialEarnings >0] = scheduledWait[trialEarnings >0]
+    nAction = sum(round(ifelse(trialEarnings >0, ceiling(timeWaited / stepDuration), floor(timeWaited / stepDuration) + 1)))
+    label = sprintf('Subject %s, %s, %s, -LL = %.2f',thisID, subData$condition[subData$id == thisID],
+                    subData$stress[subData$id == thisID], -expPara$LL_all[expPara$id == thisID] / nAction)
+    label = paste(label, paste(round(para, 3), collapse = "", seq = " "))
+    blockStart1 = sum(thisExpTrialData$blockNum == 1) + 1
+    blockStart2 = sum(thisExpTrialData$blockNum <= 2) + 1 
     
-    nAction = floor(timeWaited / stepDuration) # ????
-    
+    # prepare plotData
     plotData = data.frame(trialNum = rep(1 : nTrial, 2), timeWaited = c(timeWaited,
-                                                                     timeWaited_[[sIdx]]),
+                                                                     timeWaitedRep_[[sIdx]]),
                           quitIdx = rep(trialEarnings == 0, 2), source = rep(c("exp", "rep"), each = nTrial))
-    p = ggplot(plotData, aes(trialNum, timeWaited)) + geom_line(alpha = 0.7, aes(color = source))  +
+    p = ggplot(plotData, aes(trialNum, timeWaited)) + geom_line(aes(color = source, alpha = source))  +
       geom_point(data = plotData[plotData$quitIdx == 1 & plotData$source == "exp", ], aes(trialNum, timeWaited)) + ggtitle(label)+
-      displayTheme
+      displayTheme + geom_vline(xintercept = blockStart1) + geom_vline(xintercept = blockStart2) + 
+      scale_alpha_manual(values = c(0.8, 0.5))
     print(p)
     readline("continue")
   }
