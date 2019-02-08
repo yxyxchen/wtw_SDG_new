@@ -92,6 +92,7 @@ save(blockData, file = 'genData/expDataAnalysis/blockData.RData')
 # get session data 
 AUC = numeric(length =n)
 totalEarnings =  numeric(length =n)
+kmOnGrid_ = vector(mode = "list", length = n)
 for (sIdx in 1 : n) {
   thisID = allIDs[sIdx]
   # select data 
@@ -107,10 +108,11 @@ for (sIdx in 1 : n) {
   # survival analysis
   kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
   AUC[sIdx] = kmscResults[['auc']]
+  kmOnGrid_[[sIdx]] = kmscResults$kmOnGrid
 }
 subData = data.frame(id = allIDs, condition = factor(hdrData$condition, levels = c("HP", "LP")),
                        stress = factor(hdrData$stress, levels = c("no stress", "stress")), AUC = AUC, 
                        totalEarnings = totalEarnings)
 save(subData, file = 'genData/expDataAnalysis/subData.RData')
 
-
+save(kmOnGrid_, file = 'genData/expDataAnalysis/kmOnGrid.RData')

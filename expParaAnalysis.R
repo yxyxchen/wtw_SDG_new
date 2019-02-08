@@ -2,18 +2,6 @@ library("ggplot2")
 source("subFxs/plotThemes.R")
 load("genData/expDataAnalysis/subData.RData")
 
-
-ggplot(expPara, aes(phi)) + geom_histogram()
-ggplot(expPara, aes(tau)) + geom_histogram()
-ggplot(expPara, aes(gamma)) + geom_histogram()
-ggplot(expPara, aes(gammaSD)) + geom_histogram()
-ggplot(expPara, aes(gammaRhat)) + geom_histogram() +
-  geom_vline(xintercept = 1, color = "red")
-ggplot(expPara, aes(gammaRhat)) + geom_histogram() +
-  geom_vline(xintercept = 1, color = "red")
-ggplot(expPara, aes(gammaEffe)) + geom_histogram()
-
-
 plotParaAUC = function(expPara, paraName, subData, useID){
   expPara = expPara[(expPara$id %in% useID),]
   subData = subData[(subData$id %in% useID),]
@@ -72,3 +60,6 @@ plotParaAUC(expPara, "steep", subData, useID)
 plotParaAUC(expPara, "phi", subData, useID)
 plotParaAUC(expPara, "gamma", subData, useID)
 hist(expPara$steep)
+
+
+
