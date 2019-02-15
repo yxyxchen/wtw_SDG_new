@@ -76,29 +76,16 @@ loadAllData = function() {
 
 
 # l
-loadExpPara = function(modelName, pars){
-  n = 120
-  expPara = matrix(NA, n, (length(pars) + 1))
-  for(sIdx in 1 : n){
-    fileName = sprintf("genData/expModelFitting/%s/s%d.txt", modelName, sIdx)
-    junk = read.csv(fileName)
-    expPara[sIdx, ] = apply(junk , MARGIN = 2, mean)
-  }
-  expPara = data.frame(expPara)
-  colnames(expPara) = c(pars, "LL_all")
-  return(expPara)
-}
-
 
 loadExpPara = function(modelName, pars){
   nE = length(pars) + 2
   load("genData/expDataAnalysis/blockData.RData")
-  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
-  nNoStress = length(noStressIDList)
+  idList = unique(blockData$id) 
+  nNoStress = length(idList)
   nE = (length(pars) + 2) 
   expPara = matrix(NA, nNoStress, nE * 4)
   for(i in 1 : nNoStress){
-    ID = noStressIDList[i]
+    ID = idList[i]
     fileName = sprintf("genData/expModelFitting/%s/s%d_summary.txt", modelName, ID)
     junk = read.csv(fileName, header = F)
     if(ncol(junk) == 11){
@@ -114,6 +101,6 @@ loadExpPara = function(modelName, pars){
   
   junk = c(pars, "LL_all", "lp__")
   colnames(expPara) = c(junk, paste0(junk, "SD"), paste0(junk, "Effe"), paste0(junk, "Rhat"))
-  expPara$id = noStressIDList  # needed for left_join
+  expPara$id = idList  # needed for left_join
   return(expPara)
 }

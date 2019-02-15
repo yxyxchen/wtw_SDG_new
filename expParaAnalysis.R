@@ -1,7 +1,10 @@
 library("ggplot2")
 source("subFxs/plotThemes.R")
-load("genData/expDataAnalysis/subData.RData")
-
+source("subFxs/loadFxs.R")
+# load experimental data
+load("genData/expDataAnalysis/blockData.RData")
+idList = unique(blockData$id) 
+n = length(idList)
 plotParaAUC = function(expPara, paraName, subData, useID){
   expPara = expPara[(expPara$id %in% useID),]
   subData = subData[(subData$id %in% useID),]
@@ -29,20 +32,19 @@ plotParaAUC = function(expPara, paraName, subData, useID){
 
 ####### monte
 expPara = loadExpPara("monte", c("phi", "tau", "gamma"))
-useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | 
+useID = idList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | 
                            expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100)]
-plotParaAUC(expPara, "phi", subData, useID)
-plotParaAUC(expPara, "tau", subData, useID)
-plotParaAUC(expPara, "gamma", subData, useID)
+plotParaAUC(expPara, "phi", blockData[blockData$blockNum == 1,], useID)
+plotParaAUC(expPara, "tau", blockData[blockData$blockNum == 1,], useID)
+plotParaAUC(expPara, "gamma", blockData[blockData$blockNum == 1,], useID)
 
 
 ####### monteRP
 expPara = loadExpPara("monteRP", c("phiR", "phiP", "tau", "gamma"))
-useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRRhat >1.1 | expPara$tauRhat > 1.1 | expPara$phiPRhat > 1.1| 
+useID = idList[!(expPara$gammaRhat > 1.1 | expPara$phiRRhat >1.1 | expPara$tauRhat > 1.1 | expPara$phiPRhat > 1.1| 
                            expPara$phiREffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$phiPEffe < 100)]
 plotParaAUC(expPara, "phiR", subData, useID)
 plotParaAUC(expPara, "phiP", subData, useID)
-plotParaAUC(expPara, "phiR", subData, useID)
 plotParaAUC(expPara, "tau", subData, useID)
 plotParaAUC(expPara, "gamma", subData, useID)
 plotParaAUC(expPara, "optimism", subData, useID)
@@ -53,7 +55,7 @@ expPara$optimism = expPara$phiR - expPara$phiP
 #####
 #monteSteep
 expPara = loadExpPara("monteSteep", c("phi", "tau", "gamma", "steep")) # numPara and nPara
-useID = noStressIDList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | expPara$steepRhat > 1.1 |
+useID = idList[!(expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | expPara$steepRhat > 1.1 |
                            expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$steepEffe < 100)]
 plotParaAUC(expPara, "tau", subData, useID)
 plotParaAUC(expPara, "steep", subData, useID)
@@ -67,7 +69,7 @@ hist(expPara$steep)
 expPara = loadExpPara("monteRatio", c("phi", "tau", "gamma", "ratio")) # numPara and nPara
 RhatCols = which(str_detect(colnames(expPara), "hat"))[1 : length(pars)]
 EffeCols = which(str_detect(colnames(expPara), "Effe"))[1 : length(pars)]
-useID = noStressIDList[apply(expPara[,RhatCols] < 1.1, MARGIN = 1, sum) == length(pars) &
+useID = idList[apply(expPara[,RhatCols] < 1.1, MARGIN = 1, sum) == length(pars) &
                          apply(expPara[,EffeCols] >100, MARGIN = 1, sum) == length(pars)]
 plotParaAUC(expPara, "tau", subData, useID)
 plotParaAUC(expPara, "ratio", subData, useID)

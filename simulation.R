@@ -3,18 +3,15 @@ simulation = function(modelName, nBlock){
   library('ggplot2')
   library('dplyr')
   library('tidyr')
-  source('subFxs/simulationFxs.R') # 
+  source('subFxs/repetitionFxs.R') # 
   load("wtwSettings.RData")
   source("subFxs/taskFxs.R")
-  fileName = sprintf('genData/simulation/%s/realParas.RData', modelName)
-  load(fileName)
-  
-  # generate outfile
-  outFile = sprintf('genData/simulation/%s', modelName)
-  dir.create(outFile)
   
   # choose modelFun
-  modelFun = getSimModelFun(modelName)
+  modelFun = getRepModelFun(modelName)
+  
+  # input 
+  schedual
   ################ simulation ################
   for(condIdx in 1 : 2){
     cond = conditions[condIdx];

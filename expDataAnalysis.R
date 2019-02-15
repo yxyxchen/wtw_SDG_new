@@ -4,6 +4,8 @@ source('subFxs/analysisFxs.R') # for analysis
 source("subFxs/plotThemes.R")
 library("ggplot2")
 library('dplyr')
+dir.create("genData")
+dir.create("genData/expDataAnalysis")
 # library(Hmisc)
 
 # load setting parameters 
@@ -30,6 +32,7 @@ plotTrialEarnings =  F  # no good effect
 tGrid = seq(0, blockSecs, by = 0.1)
 AUC = numeric(length =n * nBlock)
 totalEarnings =  numeric(length =n * nBlock)
+nAction = numeric(length =n * nBlock)
 wtwEarly = numeric(length =n * nBlock)
 # descriptive statistics for individual subjects and blocks
 for (sIdx in 1 : n) {
@@ -48,7 +51,12 @@ for (sIdx in 1 : n) {
     
     # calcualte totalEarnings
     totalEarnings[noIdx] =  sum(thisTrialData$trialEarnings)
-    
+    timeWaited = thisTrialData$timeWaited
+    trialEarnings = thisTrialData$trialEarnings
+    scheduledWait = thisTrialData$scheduledWait
+    timeWaited[trialEarnings >0] = scheduledWait[trialEarnings >0]
+    nAction[noIdx] = sum(round(ifelse(trialEarnings >0, ceiling(timeWaited / stepDuration), floor(timeWaited / stepDuration) + 1)))
+      
     # plot trial-by-trial data
     if (plotTrialwiseData) {
       trialPlots(thisTrialData,label)
@@ -57,7 +65,6 @@ for (sIdx in 1 : n) {
     # survival analysis
     kmscResults = kmsc(thisTrialData,tMax,label,plotKMSC,kmGrid)
     AUC[noIdx] = kmscResults[['auc']]
-
 
     # WTW time series
     wtwCeiling = tMax
@@ -86,7 +93,7 @@ for (sIdx in 1 : n) {
 blockData = data.frame(id = rep(allIDs, each = nBlock), blockNum = rep( t(1 : nBlock), n),
                        cbal = rep(hdrData$cbal, each = nBlock), condition = factor(rep(hdrData$condition, each = nBlock), levels = c("HP", "LP")),
                        stress = factor(rep(hdrData$stress, each = nBlock), levels = c("no stress", "stress")), AUC = AUC, wtwEarly = wtwEarly,
-                       totalEarnings = totalEarnings)
+                       totalEarnings = totalEarnings, nAction = nAction)
 save(blockData, file = 'genData/expDataAnalysis/blockData.RData')
 
 # get session data 

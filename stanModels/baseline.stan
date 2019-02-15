@@ -1,6 +1,6 @@
-
 data {
   // depending on the condition
+  real wInis[2];
   real wIni;
   int tMax;
   int nTimeStep; // since round returns real here, so nTimeStep != tMax / stepDuration
@@ -31,7 +31,7 @@ model {
     }else{
       action = 1; // wait
     }
-      action ~ bernoulli(waitRate);
+      target += bernoulli_lpmf(action | waitRate) // theta defines the prob of 1
     } 
   }
 }

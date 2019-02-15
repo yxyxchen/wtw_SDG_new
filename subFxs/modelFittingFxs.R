@@ -9,6 +9,7 @@ modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, m
   nTimePoints = round(ifelse(trialEarnings >0, ceiling(timeWaited / stepDuration), floor(timeWaited / stepDuration) + 1))
   data_list <- list(tMax = tMax,
                     wIni = wIni,
+                    wInis = wInis,
                     nTimeStep = nTimeStep,
                     N = length(timeWaited),
                     timeWaited = timeWaited,
@@ -29,8 +30,16 @@ modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, m
               col.names = F, row.names=FALSE)
   # calculate and save WAIC
   log_lik = extract_log_lik(fit) # quit time consuming 
+  log_lik_trial = fit %>%
+    rstan::extract(permuted = F, pars = c(pars, "log_lik_trial")) %>% 
+    adply(2, function(x) x) %>%  # change arrays into 2-d dataframe 
+    select(-chains) 
+  log_lik_trial = as.matrix(log_lik_trial)
   WAIC = waic(log_lik)
-  save("WAIC", file = sprintf("%s_waic.RData", fileName))
+  WAICTrial = waic(log_lik_trial)
+  looStat = loo(log_lik)
+  looStatTrial = loo(log_lik_trial)
+  save("WAIC", "WAICTrial", "looStat", "looStatTrial", file = sprintf("%s_waic.RData", fileName))
   # save summarized fit 
   fitSumary <- summary(fit,pars = c(pars, "lp__", "LL_all"), use_cache = F)$summary
   write.table(matrix(fitSumary, nrow = length(pars) + 2), file = sprintf("%s_summary.txt", fileName),  sep = ",",

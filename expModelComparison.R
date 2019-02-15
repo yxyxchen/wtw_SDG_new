@@ -1,50 +1,60 @@
 # this script extract waic for all models. 
+
+# libraries and scripts
 library("stringr")
 library("ggplot2")
+
+# load model names
 modelNames = unlist(list.files(path="genData/expModelFitting/"))
 modelNames = factor(modelNames,
                    levels = c("baseline", "monte", "monteRP", "monteSteep",
-                              "monteRPSteep"),
+                              "monteSteepExp"),
                    ordered = T)
-
-load("genData/expDataAnalysis/blockData.RData")
-noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
-nNoStress = length(noStressIDList)
-
-# select ID
-source("subFxs/loadFxs.R")
-expPara = loadExpPara("monte", c("phi", "tau", "gamma"))
-a = noStressIDList[expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | 
-                     expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 ]
-expPara = loadExpPara("monteSteep", c("phi", "tau", "gamma", "steep")) # numPara and nPara
-b = noStressIDList[expPara$gammaRhat > 1.1 | expPara$phiRhat >1.1 | expPara$tauRhat > 1.1 | expPara$steepRhat>1.1 | 
-                     expPara$phiEffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$steepEffe < 100]
-expPara = loadExpPara("monteRP", c("phiR", "phiP", "tau", "gamma")) # numPara and nPara
-c = noStressIDList[expPara$gammaRhat > 1.1 | expPara$phiRRhat >1.1 | expPara$tauRhat > 1.1 | expPara$phiPRhat>1.1 | 
-                     expPara$phiREffe < 100 | expPara$tauEffe < 100 | expPara$tauEffe < 100 | expPara$phiPEffe < 100]
-
-useID = noStressIDList[!noStressIDList  %in% unique(c(a, b ,c))]
-nUse = length(useID)
 nModel = length(modelNames)
-logEvidenceList = matrix(NA, nUse, nModel)
-pWaicList = matrix(NA, nUse, nModel)
+# load experimental data
+load("genData/expDataAnalysis/blockData.RData")
+idList = unique(blockData$id) 
+n = length(idList)
+
+# define a function for convinence
+# select useID
+useID_[[i]] = vector(mode = "list", length = nModel)
+useID = idList
+source("subFxs/loadFxs.R")
+for(i in 1 : nModel){
+  modelName = modelNames[i]
+  expPara = loadExpPara(modelName, getPars(modelName))
+  RhatCols = which(str_detect(colnames(expPara), "hat"))[1 : length(pars)]
+  EffeCols = which(str_detect(colnames(expPara), "Effe"))[1 : length(pars)]
+  useID_[[i]] = idList[apply(expPara[,RhatCols] < 1.1, MARGIN = 1, sum) == length(pars) &
+                   apply(expPara[,EffeCols] >100, MARGIN = 1, sum) == length(pars)]
+  useID = idList[idList %in% useID_[[i]] & idList %in% useID]
+}
+nUse = length(useID)
+
+# extract logEvidence per trial
+# here logEvidence is on the loglikelyhood scale, so it is negtive 
+# also, it accounts for model complexity 
+logEvidence_ = matrix(NA, nUse, nModel)
+logEvidenceSe_ = matrix(NA, nUse, nModel)
+logEvidencePerAct_ = matrix(NA, nUse, nModel) # save later for model comparison 
+pWaic_ = matrix(NA, nUse, nModel)
 for(m in 1 : nModel){
   modelName = modelNames[m]
-  logEvidence = vector(length = nUse)
-  pWaic = vector(length = nUse)
   for(sIdx in 1 : nUse ){
     id = useID[sIdx]
+    nAction = blockData$nAction[blockData$id == id & blockData$blockNum == 1]
     fileName = sprintf("genData/expModelFitting/%s/s%d_waic.RData", modelName, id)
     load(fileName)
-    logEvidence[sIdx] = WAIC$elpd_waic
-    pWaic[sIdx] = WAIC$p_waic
+    logEvidence_[sIdx, m] = WAIC$elpd_waic
+    logEvidenceSe_[sIdx, m] = WAIC$se_elpd_waic
+    logEvidencePerAct_[sIdx, m] = WAIC$elpd_waic / nAction
+    pWaic_[sIdx, m] = WAIC$p_waic
   }
-  logEvidenceList[,m] = logEvidence
-  pWaicList[,m] = pWaic
 }
-waicList = -2 * logEvidenceList
+waic_ = -2 * logEvidence_
 f= "genData/expModelFitting/logEvidenceList.csv"
-write.table(file = f, waicList, sep = ",", col.names = F, row.names = F)
+write.table(file = f, logEvidence_, sep = ",", col.names = F, row.names = F)
 
 
 

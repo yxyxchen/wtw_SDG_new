@@ -26,11 +26,10 @@ monte = function(para, cond, nBlock){
   tMax= ifelse(cond == "HP", tMaxs[1], tMaxs[2])
   timeTicks = seq(0, tMax, by = stepDuration)
   nTimeStep = tMax / stepDuration
-  wIni = ifelse(cond == "HP", wInis[1], wInis[2])
   
   # initialize action values
-  Qwait = rep(wIni, nTimeStep) 
-  Qquit = wIni * gamma ^(iti / stepDuration)
+  Qwait = rep(wInis[1], nTimeStep)
+  Qquit = wInis[2]
   
   # initialize varibles for recording
   vaWaits = matrix(NA, nTimeStep, simBlockSecs / iti + 1);

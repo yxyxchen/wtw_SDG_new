@@ -1,6 +1,6 @@
-
 data {
   // depending on the condition
+  real wInis[2];
   real wIni;
   int tMax;
   int nTimeStep; // since round returns real here, so nTimeStep != tMax / stepDuration
@@ -16,6 +16,7 @@ transformed data {
   real stepDuration = 0.5;
   real iti = 2;
   real tokenValue = 10;
+  int totalSteps = sum(nTimePoints);
   }
   parameters {
   real<lower = 0, upper = 0.3> phi;
@@ -24,11 +25,11 @@ transformed data {
 }
 transformed parameters{
   // initialize action values 
-  vector[nTimeStep] Qwait = rep_vector(wIni, nTimeStep);
-  real Qquit = wIni * gamma ^(iti / stepDuration);
+  vector[nTimeStep] Qwait = rep_vector(wInis[1], nTimeStep);
+  real Qquit = wInis[2];
   
   // initialize recordings of action values 
-  matrix[nTimeStep, N] Qwaits = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
+  matrix[nTimeStep, N] Qwaits = rep_matrix(0, nTimeStep, N);
   vector[N] Qquits = rep_vector(0, N);
   
   
@@ -83,16 +84,18 @@ model {
     }
       values[1] = Qwaits[i, tIdx] * tau;
       values[2] = Qquits[tIdx] * tau;
-      action ~ categorical_logit(values);
-      //target += categorical_logit_lpmf(action | values);
+      //action ~ categorical_logit(values);
+      target += categorical_logit_lpmf(action | values);
     } 
   }
 }
 generated quantities {
 // initialize log_lik
-  matrix[nTimeStep, N] log_lik = to_matrix(rep_vector(0, nTimeStep * N), nTimeStep, N);
+  vector[totalSteps] log_lik = rep_vector(0, totalSteps);
+  vector[N] log_lik_trial = rep_vector(0, N);
   vector[2] values;
   real LL_all;
+  int no = 1;
   // loop over trials
   for(tIdx in 1 : N){
     int action;
@@ -104,7 +107,9 @@ generated quantities {
       }
       values[1] = Qwaits[i, tIdx] * tau;
       values[2] = Qquits[tIdx] * tau;
-      log_lik[i, tIdx] =categorical_logit_lpmf(action | values);
+      log_lik[no] =categorical_logit_lpmf(action | values);
+      log_lik_trial[tIdx] = log_lik_trial[tIdx] + log_lik[no];
+      no = no + 1;
     }
   }// end of the loop
   LL_all =sum(log_lik);

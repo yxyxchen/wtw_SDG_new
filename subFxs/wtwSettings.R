@@ -85,23 +85,27 @@ optimRewardRates$HP = max(HP)
 optimRewardRates$LP = max(LP)
 
 # calculate wInis 
-wInis = vector()
+wInisTheory = vector()
 for(c in 1 : 2){
   cond = conditions[c];
   trialTick = trialTicks[[cond]]
   thisDelayPDF = rewardDelayPDF[[cond]]
   nTicks = length(trialTick)
-  
+
   # assume gamma = 0.9
-  gamma = 0.9
+  gamma = 0.95
   r = - log(gamma) / stepDuration
   actionValueWaits = rep(0, nTicks)
   for(k in 1 : nTicks){
-    actionValueWaits[k] = sum(tokenValue * exp(- (trialTick[k : nTicks] - trialTick[k]) * r)* thisDelayPDF[k : nTicks] / sum( thisDelayPDF[k : nTicks]))    
+    actionValueWaits[k] = sum(tokenValue * exp(- (trialTick[k : nTicks] - trialTick[k]) * r)* thisDelayPDF[k : nTicks] / sum( thisDelayPDF[k : nTicks]))
   }
-  junk = mean(actionValueWaits)    
-  wInis[c] = junk
+  junk = mean(actionValueWaits)
+  wInisTheory[c] = junk
 }
+wInis = vector(length = 2)
+wInis[1] = 5 # value of waiting, since participants didn't know differences in conditions 
+wInis[2] = 4 # value of quitting, ensuring waiting first.
+
 
 save("conditions", "conditionColors", "tMaxs", "blockMins", "blockSecs", "iti", "tGrid", 
      "tokenValue", "stepDuration", "trialTicks", "pareto", "rewardDelayCDF", 

@@ -1,5 +1,8 @@
 expModelFitting = function(modelName, pars){
-  #  load libraries and set environments
+  dir.create("genData")
+  dir.create("genData/expModelFitting")
+  dir.create(sprintf("genData/expModelFitting/%s", modelName))
+ #  load libraries and set environments
   options(warn=-1, message =-1) # default settings borrowed somewhere
   library('plyr'); library(dplyr); library(ggplot2);library('tidyr');library('rstan') #load libraries
   Sys.setenv(USE_CXX14=1) # making rstan working on this device 
@@ -25,20 +28,21 @@ expModelFitting = function(modelName, pars){
   
   # extract input arguments from no stree subjects 
   load("genData/expDataAnalysis/blockData.RData")
-  noStressIDList = unique(blockData$id[blockData$stress == "no stress"]) 
-  nNoStress = length(noStressIDList)
+  idList = unique(blockData$id) 
+  n = length(idList)
 
   # loop over suvject
-  for(i in 2 : nNoStress){
-      thisID = noStressIDList[[i]]
+  for(i in 1 : n){
+      thisID = idList[[i]]
       thisTrialData = trialData[[thisID]]
+      thisTrialData = thisTrialData[thisTrialData$blockNum == 1,]
       timeWaited = thisTrialData$timeWaited
       scheduledWait = thisTrialData$scheduledWait
       trialEarnings = thisTrialData$trialEarnings
       timeWaited[trialEarnings > 0] = scheduledWait[trialEarnings > 0]
       cond = unique(thisTrialData$condition)
-      wIni = ifelse(cond == "HP", wInis[1], wInis[2])
+      wIni = ifelse(cond == "HP", wInisTheory[1], wInisTheory[2]) # wIni is the theoratical initial values 
       fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, thisID)
-      modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
+      modelFitting(cond, timeWaited, trialEarnings, fileName, pars, model)
   }
 }
