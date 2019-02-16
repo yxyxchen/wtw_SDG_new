@@ -10,10 +10,6 @@ source("subFxs/loadFxs.R") #
 load("wtwSettings.RData")
 load("genData/expDataAnalysis/kmOnGrid.RData")
 
-# input 
-modelName = "monte"
-pars = c("phi", "tau", "gamma")
-
 expPara = loadExpPara(modelName, pars)
 idList = unique(blockData$id)
 n = length(idList)
@@ -148,8 +144,7 @@ for(sIdx in 1 : n){
                           quitIdx = rep(trialEarnings == 0, 2), source = rep(c("exp", "rep"), each = nTrial))
     p = ggplot(plotData, aes(trialNum, timeWaited)) + geom_line(aes(color = source, alpha = source))  +
       geom_point(data = plotData[plotData$quitIdx == 1 & plotData$source == "exp", ], aes(trialNum, timeWaited)) + ggtitle(label)+
-      displayTheme + geom_vline(xintercept = blockStart2) + 
-      scale_alpha_manual(values = c(0.8, 0.5))
+      displayTheme + scale_alpha_manual(values = c(0.8, 0.5))
     print(p)
     readline("continue")
   }

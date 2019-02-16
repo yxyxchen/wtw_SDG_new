@@ -32,7 +32,7 @@ expModelFitting = function(modelName, pars){
   n = length(idList)
 
   # loop over suvject
-  for(i in 1 : n){
+  for(i in 70 : 89){
       thisID = idList[[i]]
       thisTrialData = trialData[[thisID]]
       thisTrialData = thisTrialData[thisTrialData$blockNum == 1,]
@@ -43,6 +43,6 @@ expModelFitting = function(modelName, pars){
       cond = unique(thisTrialData$condition)
       wIni = ifelse(cond == "HP", wInisTheory[1], wInisTheory[2]) # wIni is the theoratical initial values 
       fileName = sprintf("genData/expModelFitting/%s/s%d", modelName, thisID)
-      modelFitting(cond, timeWaited, trialEarnings, fileName, pars, model)
-  }
+      modelFitting(cond, wIni, timeWaited, trialEarnings, fileName, pars, model)
+  } 
 }

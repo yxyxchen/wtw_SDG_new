@@ -93,7 +93,7 @@ for(c in 1 : 2){
   nTicks = length(trialTick)
 
   # assume gamma = 0.9
-  gamma = 0.95
+  gamma = 0.90
   r = - log(gamma) / stepDuration
   actionValueWaits = rep(0, nTicks)
   for(k in 1 : nTicks){
@@ -110,7 +110,7 @@ wInis[2] = 4 # value of quitting, ensuring waiting first.
 save("conditions", "conditionColors", "tMaxs", "blockMins", "blockSecs", "iti", "tGrid", 
      "tokenValue", "stepDuration", "trialTicks", "pareto", "rewardDelayCDF", 
      "rewardDelayPDF", "meanRewardDelay", "rewardRate", "optimRewardRates", 
-     "optimWaitTimes", "wInis", file = "wtwSettings.RData")
+     "optimWaitTimes", "wInis", "wInisTheory", file = "wtwSettings.RData")
 # library(ggplot2)
 # source('plotThemes.R')
 # plotData = data.frame(time = c(trialTicks$HP, trialTicks$LP),

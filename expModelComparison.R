@@ -7,8 +7,7 @@ library("ggplot2")
 # load model names
 modelNames = unlist(list.files(path="genData/expModelFitting/"))
 modelNames = factor(modelNames,
-                   levels = c("baseline", "monte", "monteRP", "monteSteep",
-                              "monteSteepExp"),
+                   levels = c("cons_arbitrary", "cons_theoretic", "cons_partFlex_gamma"),
                    ordered = T)
 nModel = length(modelNames)
 # load experimental data
@@ -18,12 +17,13 @@ n = length(idList)
 
 # define a function for convinence
 # select useID
-useID_[[i]] = vector(mode = "list", length = nModel)
+useID_ = vector(mode = "list", length = nModel)
 useID = idList
 source("subFxs/loadFxs.R")
 for(i in 1 : nModel){
   modelName = modelNames[i]
   expPara = loadExpPara(modelName, getPars(modelName))
+  pars = getPars(modelName)
   RhatCols = which(str_detect(colnames(expPara), "hat"))[1 : length(pars)]
   EffeCols = which(str_detect(colnames(expPara), "Effe"))[1 : length(pars)]
   useID_[[i]] = idList[apply(expPara[,RhatCols] < 1.1, MARGIN = 1, sum) == length(pars) &
@@ -36,7 +36,8 @@ nUse = length(useID)
 # here logEvidence is on the loglikelyhood scale, so it is negtive 
 # also, it accounts for model complexity 
 logEvidence_ = matrix(NA, nUse, nModel)
-logEvidenceSe_ = matrix(NA, nUse, nModel)
+logLik_ = matrix(NA, nUse, nModel)
+logLikPerAct_ = matrix(NA, nUse, nModel)
 logEvidencePerAct_ = matrix(NA, nUse, nModel) # save later for model comparison 
 pWaic_ = matrix(NA, nUse, nModel)
 for(m in 1 : nModel){
@@ -47,16 +48,15 @@ for(m in 1 : nModel){
     fileName = sprintf("genData/expModelFitting/%s/s%d_waic.RData", modelName, id)
     load(fileName)
     logEvidence_[sIdx, m] = WAIC$elpd_waic
-    logEvidenceSe_[sIdx, m] = WAIC$se_elpd_waic
-    logEvidencePerAct_[sIdx, m] = WAIC$elpd_waic / nAction
+    logEvidencePerAct_[sIdx, m] = WAIC$elpd_waic/ nAction
     pWaic_[sIdx, m] = WAIC$p_waic
+    paraSummary = read.csv(sprintf("genData/expModelFitting/%s/s%d_summary.txt", modelName, id), header = F)
+    logLik_[sIdx, m] = paraSummary[ nrow(paraSummary) - 1, 1]
   }
 }
 waic_ = -2 * logEvidence_
 f= "genData/expModelFitting/logEvidenceList.csv"
-write.table(file = f, logEvidence_, sep = ",", col.names = F, row.names = F)
-
-
+write.table(file = f, logEvidencePerAct_, sep = ",", col.names = F, row.names = F)
 
 ### compara waic 
 paraInfo = data.frame(muWaic = apply(waicList, MARGIN = 2, FUN = mean),
