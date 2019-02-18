@@ -27,8 +27,8 @@ parameters {
 }
 transformed parameters{
   // initialize action values 
-  vector[nTimeStep] Qwait = rep_vector(wInis[1], nTimeStep);
-  real Qquit = wInis[2];
+  vector[nTimeStep] Qwait = rep_vector(wIni, nTimeStep);
+  real Qquit = wInis * gamma ^ (iti / stepDuration);
   
   // initialize recordings of action values 
   matrix[nTimeStep, N] Qwaits = rep_matrix(0, nTimeStep, N);
@@ -147,3 +147,4 @@ generated quantities {
   //
   LL_all = sum(log_lik);
 }
+

@@ -14,7 +14,7 @@ data {
 }
 transformed data {
   // constant
-  real sigma = 10; // sigma for the normal distribution, actuallt doesn't matter
+  real sigma = 2; // sigma for the normal distribution, actuallt doesn't matter
   real stepDuration = 0.5;
   real iti = 2;
   real tokenValue = 10;
@@ -24,11 +24,12 @@ parameters {
   real<lower = 0, upper = 0.3> phi;
   real<lower = 2, upper = 22> tau;
   real<lower = 0.7, upper = 1> gamma;
+  real<lower = 0, upper = 10> QwaitIni;
 }
 transformed parameters{
   // initialize action values 
-  vector[nTimeStep] Qwait = rep_vector(wInis[1], nTimeStep);
-  real Qquit = wInis[2];
+  vector[nTimeStep] Qwait = rep_vector(QwaitIni, nTimeStep);
+  real Qquit = QwaitIni * gamma ^ (iti / stepDuration);
   
   // initialize recordings of action values 
   matrix[nTimeStep, N] Qwaits = rep_matrix(0, nTimeStep, N);
@@ -76,6 +77,7 @@ model {
   phi ~ uniform(0, 0.3);
   tau ~ uniform(2, 22);
   gamma ~ uniform(0.7, 1);
+  QwaitIni ~ uniform(0, 10);
   // calculate the waitLogProb
   for(tIdx in 1 : N){
     values[2] = Qquits[tIdx] * tau;

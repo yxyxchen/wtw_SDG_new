@@ -1,5 +1,5 @@
 # set up 
-modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, model){
+modelFitting = function(cond, wIni, timeWaited, trialEarnings, scheduledWait, fileName, pars, model){
   load("wtwSettings.RData")
   tMax = ifelse(cond == "HP", tMaxs[1], tMaxs[2])
   condIdx = ifelse(cond =="HP", 1, 2)
@@ -7,7 +7,9 @@ modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, m
   nIter = 5000
   nTimeStep = tMax / stepDuration
   nTimePoints = round(ifelse(trialEarnings >0, ceiling(timeWaited / stepDuration), floor(timeWaited / stepDuration) + 1))
+  nScheduledWaitPoints = ceiling(scheduledWait / stepDuration)
   data_list <- list(tMax = tMax,
+                    nScheduledWaitPoints = nScheduledWaitPoints,
                     wIni = wIni,
                     wInis = wInis,
                     nTimeStep = nTimeStep,
@@ -29,19 +31,24 @@ modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, m
   write.table(matrix(unlist(tempt), ncol = length(pars) + 1), file = sprintf("%s.txt", fileName), sep = ",",
               col.names = F, row.names=FALSE)
   # calculate and save WAIC
-  log_lik = extract_log_lik(fit) # quit time consuming 
-  log_lik_trial = fit %>%
-    rstan::extract(permuted = F, pars = c(pars, "log_lik_trial")) %>% 
-    adply(2, function(x) x) %>%  # change arrays into 2-d dataframe 
-    select(-chains) 
-  log_lik_trial = as.matrix(log_lik_trial)
+  log_lik = extract_log_lik(fit) # quit time consuming
   WAIC = waic(log_lik)
-  WAICTrial = waic(log_lik_trial)
   looStat = loo(log_lik)
-  looStatTrial = loo(log_lik_trial)
-  save("WAIC", "WAICTrial", "looStat", "looStatTrial", file = sprintf("%s_waic.RData", fileName))
+  save("WAIC", "looStat", file = sprintf("%s_waic.RData", fileName))
+  # save dist and timeWaitedProbLog, not the same as simulation but ...
+  junk =  fit %>%
+    rstan::extract(permuted = F, pars =  "timeWaitedLogProb")
+  timeWaitedProb = as.vector(apply(junk, MARGIN = 3, function(x) mean(exp(x))))
+  timeWaitedProbSd = as.vector(apply(junk, MARGIN = 3, function(x) sd(exp(x))))
+  junk = fit %>%
+    rstan::extract(permuted = F, pars =  "dist") %>% 
+    adply(2, function(x) x) %>%  select(-chains)
+  dist = as.vector(apply(junk, 2, mean))
+  distSd = as.vector(apply(junk, 2, sd))
+  save("timeWaitedProb", "timeWaitedProbSd", "dist", "distSd", file = sprintf("%s_prediction.RData", fileName))
   # save summarized fit 
   fitSumary <- summary(fit,pars = c(pars, "lp__", "LL_all"), use_cache = F)$summary
   write.table(matrix(fitSumary, nrow = length(pars) + 2), file = sprintf("%s_summary.txt", fileName),  sep = ",",
             col.names = F, row.names=FALSE)
 }
+
