@@ -45,6 +45,3 @@ modelFitting = function(cond, wIni, timeWaited, trialEarnings, fileName, pars, m
   write.table(matrix(fitSumary, nrow = length(pars) + 2), file = sprintf("%s_summary.txt", fileName),  sep = ",",
             col.names = F, row.names=FALSE)
 }
-
-#rstan::traceplot(fit, pars = c("phiR","phiP", "tau", "gamma"))
-#summary(fit,pars = c(pars, "lp__", "LL_all"), use_cache = F)$summary
